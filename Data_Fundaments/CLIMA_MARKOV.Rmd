@@ -1,0 +1,67 @@
+---
+title: "Cadenas de Markov: Clima"
+output: html_notebook
+---
+
+```{r}
+
+# Definimos los estados iniciales
+#3 estados
+estados<- c("soleado", "nublado", "lluvioso")
+byRow <- TRUE
+
+# Las probabilidades de las matrices de transicion
+mt <- matrix(data = c(0.60, 0.3, 0.1,
+                      0.4, 0.4, 0.2,
+                      0.25, 0.45, 0.30),
+             byrow = byRow,nrow = 3,dimnames = list(estados, estados))
+# Las prob deben seguir el MISMO orden que los estados definidos anteriormente
+
+## 0.6 es la prob de que si HOY hace soleado mañana tambien
+## 0.4 es de estando 2(nublado), mañana sea soleado
+## 0.3 es que si hoy HACE lluvioso  mañana tambien
+```
+
+```{r}
+cmclima <- new("markovchain", states = estados,
+               byrow = byRow,
+               transitionMatrix = mt, name = "clima")
+cmclima # Probabilidades de la matriz de transicion
+plot(cmclima)  # Visualizacion de la matriz de transicion
+
+sinicial <- c(0, 1, 0)
+(dosdespues <- sinicial * (cmclima * cmclima)) # la probabilidad de que pasados 2 dias este nublado es 0.37
+#  soleado nublado lluvioso
+#  0.45    0.37     0.18
+(sietedespues <- sinicial * (cmclima ^ 7))  # Elevo la matriz de transicion a 7
+#soleado   nublado  lluvioso
+# 0.4680528 0.3617167 0.1702305
+
+
+#Estado ESTACIONARIO
+steadyStates(cmclima)  # El comportamiento a largo plazo cuando n tiene infinito, se define como el limite y lo que buscas es: ¿Cual seria el comportamiento a largo plazo?
+```
+Ahora:
+- Simulacion aleatoria del estado del clima durante 100 dias (comprobar que >n... <DS) 
+Distribucion de la probabilidad a largo plazo
+```{r}
+#el 0.4680 para los soleados, nublados...
+simulacionclima <- rmarkovchain(n = 1000, object = cmclima , t0 = "nublado")  # Se hace una simulacion de los proximos 1000 dias
+simulacionclima365 <- rmarkovchain(n = 365, object =cmclima , t0 = "nublado")  # Se hace una simulacion de lso proximos 365 o el proximo anio
+
+##simulacion: desarrollar una realidad virtual: con unas info historicas: crear un futuro
+  #jhacer evaluaciones de medidas de efectividad..
+##simulando cual seria el clima en 1000 dias partiendo de una simulacion en nublado con una matriz de transicion y nuestra cadena
+#simulacion del estado del tiempo proxima semana 
+simulacionclima[1:7]
+simulacionclima365[1:7]
+
+#Estimador maximo verosimilitud (mle=maximum likelihood estimator)
+emvclima <- markovchainFit(data = simulacionclima, method = "mle", name = "EMVclima")                                 
+#markovchainFit, devuelve una CM de una secuencia dada.
+
+emvclima$estimate
+
+emvclima$standardError
+```
+

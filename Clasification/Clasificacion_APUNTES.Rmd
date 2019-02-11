@@ -1,0 +1,624 @@
+---
+title: "Clasificacion EXAMEN"
+output: html_notebook
+---
+
+Clasificacion: comand+option+I
+aquellos que han entrado en default(Y) para cualquier valor de balance(X) and income(Y). 
+Hay una alta correlacion entre la variable predictora(balance) y la respuesta (Y). En la vida real no suelen estar tan correlacionadas.
+
+```{r}
+
+```
+
+Informacion:
+This data set consists of percentage returns for the S&P 500 stock index over 1, 250 days, from the beginning of 2001 until the end of 2005.
+- percentage returns for each of the five previous trading days: Lag1, Lag2..Lag5
+- number of shares traded on previous days(in billions) : Volume
+- percentage return on the day in question: Today
+- Whether the market was up or down on this date: Direction
+
+Plot: Volume aumenta con el tiempo, the averga shares traded ha aumentado ed 2001 a 2005.
+
+Analisis Exploratorio: Ejemplo Stock Market
+```{r}
+library(ISLR)
+names(Smarket)
+dim(Smarket)
+summary(Smarket)
+pairs(Smarket)  # Correlaciones en graficos de todas las variables
+# todas las parejas de predictores : correlacion
+cor(Smarket[,-9])  # no puedes hacer la cor sobre todas pq la 9 es una variable cualitativa (Direction: Yes or No)
+attach(Smarket)
+plot(Volume)
+# Las correlaciones entre los returns o Lags y los de hoy son aprox 0
+# La unica correlacion sustancial es entre Year y Volume
+```
+
+Regresion Logistica: Modelo y estadisticos
+- Para predecir la direccion(si van a subir o bajar) segun los lags del pasado. Direction es una variable cualitativa.
+- Se hace con glm() ya que se miden generalized logistic model y family binomial para decirle a R que es RL no otro tipo de odelo generalizado.
+
+- Al principio, paree que el modelo de regresion logistica funciona mejor que el random guessing (analiss exploratorio del principio) Aunque este resultado puede ser confuso ya que hemos entrenado y probado los modelos sobre el mismo set de observaciones: 1250 observaciones.
+- In other words, 100 − 52.2 = 47.8 % is the training error rate. As we have seen previously, the training error rate is often overly optimistic—it tends to underestimate the test error rate.
+```{r}
+# Modelo ajustado 
+glm.fit <- glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume , data = Smarket ,family=binomial)
+summary(glm.fit)
+# El p valor mas pequeño lo tiene lag 1, pero aun asi no es significativo, asi que la relacion entre Lag1 y Direction todavia no está muy clara.
+# El coeficiente NEAGTIVO para este predictor indica que si el mercado hubiese tenido un return positivo ayer, entonces hoy seria MUY POCO PROBABLE de aumentar (y tener un return positivo). 
+
+coef(glm.fit)  # Observan los coeficientes: Lag 1: -0.073073746
+summary(glm.fit)$coef
+summary(glm.fit)$coef[,4]
+
+glm.probs <- predict(glm.fit,type="response")  # prediccion de que el mercado va a ir en alza dados los valores de los predictores.
+# response: output probabilities of the form P(Y = 1|X); sino se haria sobre el training data.
+glm.probs[1:10]  # valores que corresponden a la probabilidad de que el mercado VAYA EN ALZA. 
+# Solo estamos viendo las 10 primeras probabilidades
+contrasts(Direction)  # crea dummies 
+
+#  Ahora, para predecir si el mercado va a aumentar o disminuir debemos convertir las probabilidades predichas en clases con label "up" or "down"
+(glm.pred <- rep("Down",1250))  # replica los downs 1250 times
+glm.pred[glm.probs >.5]="Up"  # y sobre estas, coger aquellas por encima de 0,5 y asignarle UP
+# The first command creates a vector of 1,250 Down elements. The second line transforms to Up all of the elements for which the predicted probability of a market increase exceeds 0.5.
+
+table(glm.pred,Direction)  # Matriz de Confusion: cuantos valores han sido correctamente clasificados y cuantos no.
+# - diagonales: predicciones correctas, las otras son predicciones mal clasificadas.
+# Hence our model correctly predicted that the market would go up on 507 days and that it would go down on 145 days, for a total of 507 + 145 = 652 correct predictions. 
+
+mean(glm.pred == Direction )
+# logistic regression correctly predicted the movement of the market 52.2 % of the time.
+```
+AHORA: queremos utilizar un conjunto de entrenamiento para ver como al entrenar el modelo ahi, como se ajusta al probar sobre los datos de prueba y asi ver si nuestra prediccion es realista.
+
+Regresion logistica: Entrenamiento
+
+Boolean vectors can be used to obtain a subset of the rows or columns of a matrix. For instance, the command Smarket[train,] would pick out a submatrix of the stock market data set, corresponding only to the dates before 2005, since those are the ones for which the elements of train are TRUE
+
+```{r}
+train <- (Year < 2005) # Creamos un vector que corresponda a las observaciones de 2001 a 2004.
+Smarket.2005 <- Smarket[!train,]  # de Smarket utilizamos el resto de datos como test con lo que no es train.
+dim(Smarket.2005)  # dimensiones del conjunto de test
+Direction.2005 <- Direction[!train]
+
+glm.fit <- glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume , data = Smarket ,family = binomial,subset = train) # logistic regression model using only the subset of the observations that correspond to dates before 2005, using the subset argument. 
+# We then obtain predicted probabilities of the stock market going up for each of the days in our test set
+glm.probs <- predict(glm.fit,Smarket.2005,type="response")  # en predict probamos los datos de entrenamiento sobre los datos de prueba, es decir, predict glm.fit sobre los datos de test y de tipo response.
+
+glm.pred <- rep("Down",252)   # Sacamos las predicciones de tests
+glm.pred[glm.probs >.5]="Up"  # Llamamos up a aquellas por encima de 0,5
+table(glm.pred,Direction.2005)  # Matriz de confusion
+mean(glm.pred==Direction.2005)  
+mean(glm.pred!=Direction.2005)  # Test Set ERROR: 52% peor que el modelo de regresion logistica
+# Normalmente el mercado de ativos no funciona asi: given that one would not generally expect to be able to use previous days’ returns to predict future market performance.
+
+
+# Ahora solo vamos a utilizar aquellas variables Lag1 y Lag2 que estan mas correlacionadas Direction (dados los p valores)
+# using predictors that have no relationship with the response tends to cause a deterioration in the test error rate (since such predictors cause an increase in variance without a corresponding decrease in bias), and so removing such predictors may in turn yield an improvement
+
+glm.fit=glm(Direction~Lag1+Lag2,data=Smarket ,family=binomial, subset=train)
+glm.probs=predict(glm.fit,Smarket.2005,type="response")
+glm.pred=rep("Down",252)
+glm.pred[glm.probs >.5]="Up"
+table(glm.pred,Direction.2005)
+
+mean(glm.pred==Direction.2005)  # esults appear to be more promising: 56 % of the daily movements have been correctly predicted.
+106/(106+76)  #  days when it predicts an increase in the market, it has a 58 % accuracy rate.
+
+# EJEMPLO: queremos predecir cuando los valores tienen diferentes values: we want to predict Direction on a day when Lag1 and Lag2 equal 1.2 and 1.1, respectively, and on a day when they equal 1.5 and −0.8. 
+
+predict(glm.fit,newdata=data.frame(Lag1=c(1.2,1.5), Lag2=c(1.1,-0.8)),type="response")
+```
+
+
+LINEAR DISCRIMINANT ANALYSIS: LDA
+
+- Solucion: No days in 2005 meet that threshold! In fact, the greatest posterior probability of decrease in all of 2005 was 52.02 %.
+
+```{r}
+library(MASS)
+(lda.fit <- lda(Direction~Lag1+Lag2,data=Smarket ,subset=train))  # only the observations before 2005 that are significant.
+# 49.2% of observations corresponden a training en el que el mercado fue para ABAJO
+# 50.1 % de las observaciones de  entrenamiento correspoonden al mercado ALCISTA
+# La media de cada predictor (lag) en cada clase (up or down), y para up: lag2 dice que los 2 dias de returns anteriores son negativos cuando el mercado sube y hay returns positivos para los 2 dias antes cuando el mercado baja.
+# los coeficientes: la combinacion lineal que forman la regla de decision de LDA
+# If −0.642 × Lag1 − 0.514 × Lag2 is large, then the LDA classifier will predict a market increase, and if it is small, then the LDA classifier will predict a market decline
+
+plot(lda.fit) # If −0.642 × Lag1 − 0.514 × Lag2 se hace para todas las combinaciones de las observaciones de entrenamiento y asi se obtiene la grafica: histograma de distribucion
+lda.pred <- predict(lda.fit, Smarket.2005)
+names(lda.pred)
+# class tiene las LDA predicciones para el movimiento de mercado: Up and Down
+# posterior: is a matrix whose kth column contains the posterior probability that the corresponding observation belongs to the kth class,
+# x: contiene los discriminantes lineales
+
+lda.class <- lda.pred$class
+table(lda.class ,Direction.2005)
+mean(lda.class==Direction.2005)  # misma accuracy casi que la regresion logistica
+
+sum(lda.pred$posterior[,1]>=.5)  # threshold del 50% aplicado a las probabilidades posteriores para ver las predicciones que son mayores de 0.5(up) y las menores(down)
+sum(lda.pred$posterior[,1]<.5)  # hay mas que van DOWN
+
+lda.pred$posterior[1:20,1]  # la posterior corresponde a que el mercado va a bajar
+lda.class[1:20]
+#If we wanted to use a posterior probability threshold other than 50% in order to make predictions, then we could easily do so. For instance, suppose that we wish to predict a market decrease only if we are very certain that the market will indeed decrease on that day—say, if the posterior probability is at least 90 %.
+sum(lda.pred$posterior[,1]>.9)
+#No days in 2005 meet that threshold! In fact, the greatest posterior prob- ability of decrease in all of 2005 was 52.02 %.
+
+```
+
+QDA: Quantitative Discriminant Analysis
+- Con el mean que es de casi 60% vemos que con el QDA los datos se han ajustado bien (accuracy) con un 60%, aunque para el mercado de activos es un dato sorprendente.
+- Comparamos las medias con el LDA y esto indica que el QDA ha calculado la relacion lineal mas precisamente que el LDA y la regresion logistica.
+- Pero esto no siempre es del todo fiable por lo que hay que utilizar mas medidas para escoger un modelo.
+```{r}
+(qda.fit <- qda(Direction~Lag1+Lag2,data=Smarket ,subset=train))
+# Contiene la media de los grupos pero no los coeficientes ya que es un clasificador cuadratico y no un clasificador lineal
+qda.class <- predict(qda.fit,Smarket.2005)$class
+table(qda.class ,Direction.2005)
+mean(qda.class==Direction.2005)  # Hay un accuracy del 60%, el mas grande hasta ahora, aunque es un porcentaje bajo en la practica, en la vida real en los mercados, no suele pasar que haya un accuracy tan elevado.
+
+```
+
+KMEDIAS: K nearest neighbors
+- con knn no hay que hacer 2 pasos sino que directamente con la funcion knn() se calculan predicciones con este comando
+  - La funcion necesita 2 comandos: train y test
+  - K: numero de los vecinos mas cercanos utilizados por el clasificador.
+
+```{r}
+library(class)
+train.X <- cbind(Lag1 ,Lag2)[train,]  # matriz que contiene los predictores
+test.X <- cbind(Lag1,Lag2)[!train,]  # matriz que contiene los predictores asociados con los datos sobre los que vamos a probar
+train.Direction <- Direction [train]  # vector que contiene las difernetes CLASES
+
+ #   K = 1
+set.seed(1)  # por si hay vecinos de antemano para "entrenar ciegamente" rompiendo esas cercanias
+knn.pred <- knn(train.X,test.X,train.Direction ,k=1)
+table(knn.pred,Direction.2005)
+(83 + 43) / 252  # los resultados con k=1 no son muy fiables pq solo hay un 50% de las observaciones clasificadas correctamente.  
+
+# Entonces probamos K = 3
+knn.pred <- knn(train.X,test.X,train.Direction ,k = 3)
+table(knn.pred,Direction.2005)
+mean(knn.pred == Direction.2005)  # los resultados mejoran con esta pero al seguir aumentando K la precision disminuye, por tanto, sigue siendo QDA nuestra mejor eleccion.
+
+```
+
+
+Ejemplo 1: Breast Cancer
+
+```{r}
+# Establecemos la ruta del directorio de trabajo para este ejercicio
+#setwd("~/Desktop/DATASCIENCE/PRACTICASR")
+
+# Referenciamos el fichero con la base de datos
+loc <-"http://archive.ics.uci.edu/ml/machine-learning-databases/"
+ds <- "breast-cancer-wisconsin/breast-cancer-wisconsin.data"
+url <- paste(loc, ds, sep="")
+
+(breast <- read.table(url, sep=",", header=FALSE, na.strings="?")) # leemos la ruta en la que los NA apareceran con el simbolo ? y sin encabeado
+# Aparecen unas variables: V1, V2... sin nombres
+
+# Definimos los nombres de las variables
+
+names(breast) <- c("ID", "clumpThickness", "sizeUniformity", "shapeUniformity", "maginalAdhesion","singleEpithelialCellSize", "bareNuclei", "blandChromatin", "normalNucleoli", "mitosis", "class")
+View(breast)
+
+df <- breast[-1]  # Eliminamos la primera col pq id no nos sirve para nada entonces
+is.data.frame(df)   # Preguntas si es un DF y devuelve booleano
+str(df)  # Informacion sobre las caracteristicas de las variables de la BBDD
+
+summary(df) 
+# Max min y media: valores matematicos para detectar errores
+# Si se que 0 es mujer y 1 es hombre y me sale de repente un 6 eso es un error: corregimos o eliminamos
+# Pinta a ser una buena escala de CALIDAD DE VIDA por ej. 
+# Todos son enteros(int)
+```
+
+CLASIFICACION: BREAST
+
+```{r}
+# Definimos la variable de clasificacion como un factor y asignamos etiquetas: son variables DISCRETAS no CATEGORICAS
+df$class <- factor(df$class, levels=c(2,4), labels=c("benigno", "maligno"))
+
+
+# Definimos una semilla aleatoria y definimos dos data frame, uno para estimar y otro para validar
+set.seed(1234)
+train <- sample(nrow(df), 0.7*nrow(df))  # VECTOR LOGICO: 30% No y 70% si
+
+df.train <- df[train,]  # BBDD  hecha con una muestra aleatoria ; muestreame 10000 el y selec el 70% de ellos
+df.validate <- df[-train,]  # que seleccione como test aquellos que no son train: TEST
+
+
+# Vemos la estructura de la variable class en cada uno de los data frame obtenidos
+table(df.train$class) 
+table(df.validate$class)
+# 2 tablas con la variable CLASS: variable de clasificacion (acordar de default)
+# NO es una muestra BALANCEADA entre train y test: suficiente para aplicar el modelo de regresion logistica
+
+# Estimamos la regresion logistica: con los datos de entrenamiento
+fit.logit <- glm(class~., data = df.train, family = binomial())  # Modelo de regresion general y lo aplicamos sobre la variable class 
+summary(fit.logit)  # nivel de significacion: aquellos que esten por debajo de 0.05% son significativos: la uniformidad del tamaño
+exp(coef(fit.logit))
+
+# Coeficients en estimate: -0.04805 para sizeUniformity: esto significa que si aumenta el tamaño de este baja la ventaja relativa en un 5%; con shapeuniformity aumentaría un 50% la ventaja relativa.
+
+```
+
+
+PREDICCION: BREAST
+
+```{r}
+
+# Realizamos la prediccion con la MUESTRA DE VALIDACION O TEST
+(prob <- predict(fit.logit, df.validate, type="response"))
+
+# Vamos a asignar en la prediccion a los individuos con prob mayores ed 0.5 la categoria maligno y al contrario. 
+logit.pred <- factor(prob >0.5, levels = c(FALSE, TRUE), labels=c("benigno", "maligno"))
+
+# Creamos una tabla que relaciona valores poblaciones y predicciones de la muestra de validacion o TEST
+logit.perf <- table(df.validate$class, logit.pred, dnn=c("Actual", "Predicted"))
+
+```
+
+Calcular Hipotesis de homosteceidad
+```{r}
+# Importamos librerias
+library(car)
+install.packages('rattle')
+library(rattle)
+# Cargamos los datos
+data(wine, package='rattle')
+
+attach(wine)
+head(wine)  # vemos los primeros datos del df
+scatterplotMatrix(wine[2:6])  # Cogemos las variables de Alcohol a Magnesio para representarlas en un Grafico de Dispersion
+
+# Ejemplo de LDA: es hallar combinaciones lineales de las variables originales, es decir, los 13 compuestos químicos que ofrezcan la mejor SEPARACION POSIBLE ENTRE LOS GRUPOS (variedades de vino).
+
+# Sabemos:El num MAXIMO de funciones discriminantes VALIDAS es el menor entre G-1 y p, luego aqui tendremos 2 funciones DISCRIMINANTES
+
+# Funcion LDA de la libreria MASS
+library(MASS)
+(wine.lda <- lda(Type ~ ., data = wine))  # El tipo es la variable class 
+# Aquellas vriables con group means muy parecidos: EJ: ASH . NO son variables DISCRIMINANTES
+```
+
+Así la primera funcion discriminante es una COMBINACION LINEAL de las variables: -0.403*Alcohol+0.165*Malic ... -0.003*Proline
+
+Sabemos que los valores de cada función discriminante están ESTANDARIZADOS (media cero y varianza unitaria) 
+
+La proporcion de la traza o "proportion of trace", es el porcentaje de separacion que consigue cada funcion discriminante, en este caso, 68.75% y 31.25% por cada una de ellas.
+
+Una forma interesante de observar los resultados del LDS es mediante un histograma apilado de los valores de la función discriminante en las muestras de los distintos grupos (aquí las variedades de vinos): FUNCION "ldahist()"
+
+```{r}
+
+(wine.lda.values <- predict(wine.lda))
+ldahist(data = wine.lda.values$x[,1], g=Type)  # Histograma de la primera funcion
+
+# La segunda funcion discriminante, separa a si mismo entre VARIEDADES y tambien podemos llevar a cabo el histograma de los valores de esta segunda funcion
+ldahist(data = wine.lda.values$x[,2], g=Type)
+
+
+# Scatterplots de las funciones Discriminantes: para representar el grafico de dispersion con de las2 mejores funciones discriminantes etiquetadas por variedad, haremos:
+
+plot(wine.lda.values$x[,1],wine.lda.values$x[,2])   # Hacer el scatterplot
+text(wine.lda.values$x[,1],wine.lda.values$x[,2],Type,cex=0.7,pos=4,col="red")   # Añadir etiquetas
+
+# A partir del gráfico de dispersión de las 2 PRIMERAS FUNCIONES, podemos observar que los vinos de las distintas variedades están bastante bien separadas en el gráfico. La primera función discriminante (EJE X) separa muy bien las variedades 1 y 3, y no tanto las variedades 1 y 2 o 2 y 3.
+
+# La segunda función discriminante (EJE Y) consigue una buena separación, sin ser pefecta, de las variedades 1 y 2 y 2 y 3, y muy deficiente de la 1 y la 3.
+
+#Para conseguir una buena discriminaci?n de las tres variedades es necesario emplear las dos funciones.
+
+# CONTINUAR CON LAS PREDICCIONES
+table(predict(wine.lda)$class, Type)  # se han clasificado bien
+
+
+```
+
+Clasificacion MEDIAS
+```{r}
+#Generamos una muestra normal de media 3000 y desviación típica 2000 para la población I
+#Generamos una muestra normal de media 10000 y desviación típica 2000 para la población II
+
+x1=rnorm(1000)*2000+3000
+##queremos 2 poblaciones normales- 1,000 num aleatorios los multiplico por 2000 y sumo 3000
+X1=matrix(x1,nrow=1000)
+y1=rep(1,1000)
+Y1=matrix(y1,nrow=1000)
+x2=rnorm(1000)*2000+10000
+X2=matrix(x2,nrow=1000)
+y2=rep(2,1000)
+Y2=matrix(y2,nrow=1000)
+X=rbind(X1,X2)
+Y=rbind(Y1,Y2)
+
+##representando una funcion de densidad
+
+#Representación gráfica de las funciones de densidad anteriores
+
+a1=seq(-1000,7000,100)
+b1=dnorm(a1,mean=3000,sd=2000)
+a2=seq(6000,14000,100)
+b2=dnorm(a2,mean=10000,sd=2000)
+A1=matrix(a1,nrow=81)
+A2=matrix(a2,nrow=81)
+B1=matrix(b1,nrow=81)
+B2=matrix(b2,nrow=81)
+A=rbind(A1,A2)
+B=rbind(B1,B2)
+plot(A,B)
+
+#Cálculo del valor de c, límite de la función discriminante
+
+c=(mean(x1)+mean(x2))/2
+c
+
+#Seleccionar casos con error de asignación
+
+ErrorX1=subset(X1,X1>c)
+ErrorX2=subset(X2,X2<c)
+tasaError=(nrow(ErrorX1)+nrow(ErrorX2))/2000
+tasaError
+
+```
+ARBOLES DE DECISION: CLAIMS DE LOS COCHES: ACCIDENTE
+- Los arboles de decision son convenientes cuando estamos haciendo una clasificacion discreta
+- Los arboles de regresion son convenientes cuando la clasificacion es metrica
+
+Origen: base de datos pública australiana con 67.856 registros de asegurados de los que 4.264 hablan dado al menos un parte.
+```{r}
+# Caso 1: Determinar la probabilidad de que un asegurado da un parte de accidente; ver car.txt 
+
+# PRIMERA APROXIMACION: libreria rpart: viene en la libreria CART de R
+library(rpart)
+car.df <- read.csv("car.csv")
+head(car.df)
+
+# Arbol
+(car.rpart <- rpart(clm ~ veh_value + veh_body + veh_age + gender + area + agecat,method="class", data = car.df))
+# Vamos a predecir clm o CLAIMS, es decir, el resto son las variables predictoras
+
+
+printcp(car.rpart)  # Revisamos los resultados
+plotcp(car.rpart)  # Visualizamos los resultados de CV: diagrama de compleidad... SOSPECHOSO
+
+# CONCLUSION DE ESTO: la informacion no es concluyente y existe un desbalanceo entre los que han presentado reclamación y los que no; la clasificiacion es muy compleja en este caso y el desbalanceo es un factor fuerte
+
+summary(car.rpart)  # Resumen detallado de los cortes
+
+# CONCLUSION FINAL: como podemos ver, el procedimiento no funciona, debido al desequilibrio ("imbalance") entre los dos grupos: el grupo con partes representa sólo el 6.8% del total.
+
+ # class counts: 63232  4624
+  # probabilities: 0.932 0.068 
+
+```
+ARBOLES DE DECISION: GENERO (SEX GENDER)
+
+```{r}
+
+# Leemos los datos de internet
+gender <- read.csv("http://www.biz.uiowa.edu/faculty/jledolter/DataMining/GenderDiscrimination.csv")
+
+head(gender, 6) # comprobamos el encabezado de gender 
+
+# Libreria RPART: arboles de decision
+library(rpart)
+gender.rpart1 <-  rpart(Gender~ Experience + Salary,data = gender, method="class")  # Arbol
+
+
+plotcp(gender.rpart1) # Visualizar la eficacia de la poda futura: Este tiene mas sentido
+printcp(gender.rpart1) 
+
+summary(gender.rpart1) # ofrece un resumen del proceso y de la importancia de las variables predictoras
+# Podemos seguir ya que los valores estan mejor distribuidos y nos devuelve un arbol con una poda
+
+plot(gender.rpart1, uniform = TRUE, branch=0.3)  # Construccion Arbol GRAFICA 
+text(gender.rpart1, use.n = TRUE, cex = 0.75)  # Insertas el texto en cada una de las ramas
+
+```
+
+Dado que el ARBOL es DEMASIADO GRANDE e incluye variables muy poco significativas, llevaremos a cabo una PODA; en general optaremos por un ARBOL QUE MINIMICE el error de VALIDACION cruzada, dado por xerror tanto en printcp() como en summary() --> Aquí, cp=0.036765
+```{r}
+
+# Creamos un segundo arbol en el que podamos el primer arbol
+gender.rpart2 <-  prune(gender.rpart1, cp = 0.036765)
+
+plot(gender.rpart2, uniform = TRUE, branch=0.3, compress=FALSE)
+text(gender.rpart2, use.n = TRUE, cex = 0.75, all=TRUE)
+
+#install.packages("rpart.plot")
+library(rpart.plot)
+
+prp(gender.rpart2, type = 2, extra = 104, fallen.leaves = TRUE, main="Decision Tree")  # Arbol de decision final
+```
+
+Otra forma:  determinar automáticamente el cp, ya que hay que tomar decision de si podar mucha o no- si desarrollamos el arbol hacemos los nodos mas PUROS; pero hacemos el nodo mas COMPLEJO
+
+```{r}
+gender.rpart1$cptable[which.min(gender.rpart1$cptable[,"xerror"]),"CP"]  # buscamos donde el CP es menor
+
+gender.rpart3 <-  prune(gender.rpart1, cp = 0.01833333)  # procedemos a la poda del arbol
+
+plot(gender.rpart3, uniform = TRUE)
+text(gender.rpart3, use.n = TRUE, cex = 0.75)
+prp(gender.rpart3, type = 2, extra = 104, fallen.leaves = TRUE, main="Decision Tree")
+
+# Salario de 92000 y experiencia MUJERES
+# Se observa claramente la diferencia derivada de los decimales
+
+```
+
+Arboles de Decision con el paquete PARTY
+ Proporciona ARBOLES DE REGRESION NO PARAMETRICA para respuestas nominales, ordinales, numericas, censuradas o multivariantes.
+- El crecimiento del árbol se basa en en reglas estadísticas de parada, de forma que no se hace necesaria la poda.
+
+```{r}
+install.packages("party")
+library(party)
+gender.party1 <-  ctree(Gender~ Experience + Salary,data = gender)
+
+plot(gender.party1, main="Arbol de inferencia condicional para Gender Discrimination")
+
+# El paquete rpart.plot
+#install.packages("rpart.plot")
+library(rpart.plot)
+
+rpart.plot(gender.rpart2)
+rpart.plot(gender.rpart2,box.palette="GnBu",branch.lty=3, shadow.col="gray", nn=TRUE,
+           main="Arbol de clasificacion para Gender Discrimination usando rpart.plot")
+```
+
+EJERCICIO: titanic
+The dataset (training) is a collection of data about some of the passengers (889 to be precise) and the goal of the competition is to predict the survival (either 1 if the passenger survived or 0 if they did not) based on some features such as the class of service, the sex, the age etc. 
+- As you can see, we are going to use both categorical and continuous variables.
+```{r}
+training.data.raw <- read.csv('titanic.csv',header=T,na.strings=c(""))
+# Make sure that the parameter na.strings is equal to c("") so that each missing value is coded as a NA. This will help us in the next steps.
+```
+
+Now we need to check for missing values and look how many unique values there are for each variable using the sapply() function which applies the function passed as argument to each column of the dataframe.
+Es decir, hay que ver los NAs que tiene cada variable pq en funcion de esto tomaremos decisiones--> o no la consideramos; si lA VARIABLE es relevante veremos
+```{r}
+sapply(training.data.raw,function(x) sum(is.na(x)))  # Hay Nas en Cabin en Age y en Embarked
+sapply(training.data.raw, function(x) length(unique(x)))
+# Cabina puede explicar la supervicencia mayor o menor: categorizar por cabinas en funcion de piso y ubicacion
+
+# The variable cabin has too many missing values, we will not use it. We will also drop PassengerId since it is only an index and Ticket.
+# Using the subset() function we subset the original dataset selecting the relevant columns only.
+
+data <- subset(training.data.raw,select=c(2,3,5,6,7,8,10,12))
+View(data)  # Nos hemos quedado con las variables relevantes
+
+# Se seleccionan todas excepto: la 1, la 4, la 9 y la 11: passengerid, name, ticket(de venta de las entradas) y cabina <- aquello que no es relevante pq tiene muchos NAS o bien sean num de referencias que no dicen nada
+
+```
+
+To replace the missing values with the average, the median or the mode of the existing one. I'll be using the average.
+ --> ESTO ES LA IMPUTACION: vamos a asignar dentro de la variable edad de la base de datos DATA los huecos en blanco
+ - genera una condicion de true false y si es true sera un hueco en blanco y va a asignar la media  de la variable edad cuando el dato sea distinto de NA
+```{r}
+data$Age[is.na(data$Age)] <- mean(data$Age,na.rm=T)
+
+# A factor is how R deals categorical variables.
+# We can check the encoding using the following lines of code
+
+is.factor(data$Sex) ##indica que son factores 
+
+is.factor(data$Embarked)
+```
+```{r}
+
+# Con constrasts() funcion vemos como se han dumificado las variables en R y como interpretarlas en el modelo. 
+# DIF fundamental con FISHER: estamos incluyendo variables que no son variables cuantitativas ni dicotomicas... son CUALITATIVAS
+contrasts(data$Sex) 
+contrasts(data$Embarked)
+##si es 1: no se altera y si es 1.1 que aumente 10% la ventaja relativa IMPORTANTE-- que aumente la ventaja relativa de salvarse frente a no
+
+```
+Esperamos en e elevado a beta con sexo: inferior a 1 porque tiene que ser menor
+- El e elevado a beta es igual a el efecto del hombre sobre la mujer
+- Por encima significa que la ventaja relativa de sobrevivir aumenta al ser hombre
+- Por debajo significa que la ventaja relativa de sobrevivir aumenta al ser mujer
+
+ESTO SE EXPLICA: matrimonio con todo igual excepto el sexo <- todo igual menos pasar de ser mujer a varon: la ventaja relativa de salvarse aumenta un 10%
+
+-------------------------------------------------------------
+EN CUALQUIER MODELO DE REGRESION UNO ESPERA O ASUME QUE VA A OCURRIR Y VA A ESTAR POR DEBAJO DE 1
+
+As for the missing values in Embarked, since there are only two, we will discard those two rows.
+
+```{r}
+data <- data[!is.na(data$Embarked),]
+rownames(data) <- NULL  # Eliminando el nombre de las filas 
+View(data)  # estas machacando la estructura del propio data
+
+# We split the data into two chunks: training and testing set. The training set will be used to fit our model which we will be testing over the testing set.
+# COMO LO DE COMPRAR EL TICKET ES BASTANTE ALEATORIZADO ENTONCES COJO DATOS ALEATORIOS Y TESTEO
+train <- data[1:800,]
+test <- data[801:889,]
+
+
+# Now, let's fit the model. Be sure to specify the parameter family=binomial in the glm() function.
+model <- glm(Survived ~.,family=binomial(link='logit'),data=train)
+
+# By using function summary() we obtain the results of our model:
+summary(model)
+
+# Intercept es la constante 
+# Los coefficientes que salen aqui son los BETAS
+    # El tener esposa o hermanos, la clase la edad y sobre tener familia en el barco; yo voy buscando la referencia de 1 i elevado a beta
+```
+
+Esto son los e ELEVADO A LOS BETAS
+- En un modelo lineal si B1 es positivo si x1 aumenta una unidadd tambien y entonces las referencias entre beta es 0 --> incremento o decremento 
+- los coeficientes a tener en cuenta e elevado a beta y si es 1 la ventaja no varia por tanto la referencia es 1
+
+- Si es superior a 1 la tasa de crec con un incremento
+  - el PLCASS indica que baja casi un 70% la ventaja relativa al bajar de clase
+  - el bajar de 1 clase a 3 clase será: 0,33 al cuadrado= 0,1089 que baja un 90% la ventaja relativa 
+  - el hecho de ser hombre quita un 93% de ventaja relativa de sobrevivir
+  - si bajo de una clase solo 0.33 wi bajo dos clases es 0.33 al cuadrado
+  - incremento de 1 significa perder una categoria: en media baja la ventajarelativa de vivir un 60 y pico % (Esto proviene de 1-0.33)
+  - que pasa con una variable cuando el resto está inmovil 
+  
+  ser mujer aumenta la supervivencia <- pelicula
+  sexo y clase son 2 factores que van para abaj
+#chica: mas joven, mujer y 1 clase y sobrevive
+```{r}
+exp(coef(model))
+```
+ANOVA MODEL: evalua la capacidad explicativa del modelo y aparecen reducciones en la variabilidad a continuacion
+- la variable sexo es la que mas capacidad explicativa tiene respecto a supervivencia y no supervivencia
+- y el resto la reduccion de variabilidad o deviance es poco apreciable
+- la variable mas potente que explica esto es el SEXO, en seg lugar la clase y en mucha menor cuantia la edad
+```{r}
+# Now we can run the anova() function on the model to analyze the table of deviance
+anova(model, test="Chisq")
+```
+Analyzing the table we can see the drop in deviance when adding each variable one at a time.
+Again, adding Pclass, Sex and Age significantly reduces the residual deviance. 
+The other variables seem to improve the model less even though SibSp has a low p-value.
+A large p-value here indicates that the model without the variable explains more or less the same amount of variation.
+```{r}
+
+# While no exact equivalent to the R2 of linear regression exists, the McFadden R2 index can be used to assess the model fit.
+
+install.packages("pscl")
+library(pscl) ##para ver los coefficientes de ajuste
+pR2(model)
+```
+
+Miramos MCFADDEN que es un coeff entre 0 y 1 <- no está mal 0.33 es un modelo valido pero que tiene un r2 mejorable
+- tambien es importante el hommer.... y la matriz de confusion (comparar lo real con lo predicho)
+
+Para ello dividimos la muestra en 2
+
+
+In the steps above, we briefly evaluated the fitting of the model, 
+Now we would like to see how the model is doing when predicting y on a new set of data. 
+By setting the parameter type='response', R will output probabilities in the form of P(y=1|X). 
+Our decision boundary will be 0.5. If P(y=1|X) > 0.5 then y = 1 otherwise y=0. 
+Note that for some applications different thresholds could be a better option.
+```{r}
+fitted.results <- predict(model,newdata=subset(test,select=c(2,3,4,5,6,7,8)),type='response')
+# Nuevos datos subconjunto del data test: de la 1 al 800 estimo al modelo y del 800 tal utilizo como muestra de validacion y selecciono las variables que me interesan y voy a asignar o 1 o 0
+fitted.results <- ifelse(fitted.results > 0.5,1,0)
+# Una probabilidad: voy a hacer una prediccion categorica: si la variable que acabo de calcular para un individuo es mayor 0.5 SOBREVIVE, sino NO SOBREVIVE
+```
+
+24 acierta y 5 falla y falla de los que sobreviven 9 que dice que no sobreviven cuando en realidad si sobreviven
+- si sumamos los fallos: en torno a 90: 14/90 <- 18 o 19% 
+- el modelo no se ajusta mal 
+- sabemos los factores que explican la supervivencia frete a la no supervivencia 
+- sobrevivieron 23 y el modelo me dice que bien 24 pero 9 no los ha detectado
+```{r}
+logit.perf <- table(test$Survived, fitted.results, dnn=c("Actual", "Predicted"))
+logit.perf
+
+misClasificError <- mean(fitted.results != test$Survived)
+print(paste('Accuracy',1-misClasificError))
+```
+

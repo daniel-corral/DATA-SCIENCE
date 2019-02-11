@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1548054143335.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3921057929",
+    "id" : "84B3948E",
+    "lastKnownWriteTime" : 1546552720,
+    "last_content_update" : 1546552720,
+    "path" : "~/Desktop/EXAMENES/p7/codigop7.R",
+    "project_path" : "codigop7.R",
+    "properties" : {
+        "cursorPosition" : "117,0",
+        "scrollLine" : "99"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

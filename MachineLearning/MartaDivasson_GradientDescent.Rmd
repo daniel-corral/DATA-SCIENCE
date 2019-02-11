@@ -1,0 +1,288 @@
+
+---
+title: "Cost functions and gradient descent"
+author: "Marta Divassón Carribero"
+date: "6 December 2018"
+
+---
+
+# Basic R Markdown
+```{r}
+setwd("~/Desktop/DATASCIENCE/PRACTICASR/MACHINE")
+```
+
+Install the rmarkdown package
+```{r}
+library(rmarkdown)
+```
+
+Set echo = TRUE if you want to include source code in the output
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Binary classification: problema supervisado por clasificacion en 2 grupos
+- Buscar una formula a la recta: los puntos estan mucho mas mezclados de lo que parece
+- Solución con regresión logísitica
+
+Binary or binomial classification is the task of classifying the elements of a given set into two groups (predicting which group each one belongs to) (@binaryClassification).
+
+Logistic Regression
+
+- Tiende a tener 2 valores: 0 y 1
+- Predecir una probabilidad (pertenencia o no pertenencia): es un valor comprendido entre 0 y 1 que esta condicionado por algo(x) que es un vector.
+
+In statistics, logistic regression, or logit regression, or logit model[1] is a regression model where the dependent variable (DV) is categorical (@logisticRegression).
+
+Machine Learning: representacion MATRICIAL: como es una regresion(recta lineal), el vector fila traspuesto, tiene que ser vector columna
+- El resultado: le damos un peso si es mas cercano de 0 (no fraude) o 1 (fraude).
+
+El sismoide: indica cuanto mas se aleje de 0 mas tiende a 0 o a 1: le damos un peso que es un tensor para la eleccion. 
+- y^ devuelve el resultado de una regresion pasado por una sismoide pasado por los extremos
+
+```{r}
+Sigmoid <- function(x) { 
+  1 / (1 + exp(-x))
+}
+
+# feed with data
+x <- seq(-5, 5, 0.01)
+
+# and plot
+plot(x, Sigmoid(x), col = 'blue', ylim = c(-.2, 1))
+```
+Cost Function
+- Definimos una función de coste, es decir, el MSE o MAE. 
+- Esta mide la diferencia entre las salidas originales y las salidas producidas por el modelo.
+- Objetivo: Maximizar el acierto o minimizar el error: clasificacion
+
+- training set: para cada x de entrada se producen unas y de salida
+- diferencia entre esto y lo real: ERROR: matriz de confusion
+
+
+```{r}
+# Cost Function
+CostFunction <- function(parameters, X, Y) {
+  n <- nrow(X)
+  # function to apply (%*% Matrix multiplication)
+  g <- Sigmoid(X %*% parameters)
+  J <- (1/n) * sum((-Y * log(g)) - ((1 - Y) * log(1 - g)))
+  return(J)
+}
+```
+
+
+```{r}
+#Load data
+data <- read.csv("4_1_data.csv", sep = ",", dec = ".")
+
+#Create plot
+plot(data$score.1, data$score.2, col = as.factor(data$label), xlab = "Score-1", ylab = "Score-2")
+```
+Let us set predictor and response variables.
+
+```{r}
+#Predictor variables
+X <- as.matrix(data[, c(1,2)])
+
+#Add ones to X in the first column (matrix multiplication x b)
+X <- cbind(rep(1, nrow(X)), X)
+
+#Response variable: variable de salida
+Y <- as.matrix(data$label)
+```
+
+EL ACCURACY NO ES SUFICIENTE: implica el uso de la matriz de Confusión 
+
+```{r}
+#Intial parameters
+initial_parameters <- rep(0, ncol(X))
+initial_parameters
+
+#Cost at inital parameters: coste inicial con parametros definidos
+CostFunction(initial_parameters, X, Y)
+```
+
+With each step of gradient descent, parameters come closer to the optimal values that will achieve the lowest cost: set (i.e.) the iteration parameter to 1200
+- Ir probando parametros hasta encontrar aquellos que minimicen el error
+
+1. Llamada a una funcion (luego lo haremos desde 0):
+- Criterio de parada: 1200 iteraciones
+- Estamos partiendo de unos datos iniciales siendo b el primero y luego w
+- Decido inicializarlo todo desde 0: 0x1+ 0x2+0
+
+2. Inicialización  del proceso:
+- Maximo numero de optimizacion dentro del parametro de iteración
+- Busqueda del gradiente para ir bajando en la pendiente, pasando:
+  - la funcion de coste
+  - mi dataset de entrenamiento
+  - a parte le paso lo que ha pasado con los alumnos: utiliza para calcular el coste: cuando ha acertado con 0 y cuando no ha acertado con 1
+  - optim: durante 1200 iteraciones : hace los saltos y cuando paramos NOS DA EL MEJOR VALOR QUE HA ENCONTRADO EN TODOS ESOS SALTOS: busca los mejores parametros para las calificaciones
+  
+- Parameters: devuelve los parametros de la funcion: coste se ha reducido
+
+```{r}
+# We want to minimize the cost function. Then derivate this funcion
+TestGradientDescent <- function(iterations = 1200, X, Y) {
+  
+  # Initialize (b, W)
+  parameters <- rep(0, ncol(X))
+  # Check evolution
+  print(paste("Initial Cost Function value: ", 
+              convergence <- c(CostFunction(parameters, X, Y)), sep = ""))
+  
+  # updating (b, W) using gradient update
+  
+  # Derive theta using gradient descent using optim function
+  # Look for information about the "optim" function (there are other options)
+  parameters_optimization <- optim(par = parameters, fn = CostFunction, X = X, Y = Y, 
+                                   control = list(maxit = iterations))
+  #set parameters
+  parameters <- parameters_optimization$par
+  
+  # Check evolution
+  print(paste("Final Cost Function value: ", 
+              convergence <- c(CostFunction(parameters, X, Y)), sep = ""))
+
+ return(parameters) 
+}
+
+# How to use
+parameters <- TestGradientDescent(X = X, Y = Y)
+# probability of admission for student (1 = b, for the calculos)
+new_student <- c(1,25,78)
+print("Probability of admission for student:")
+print(prob_new_student <- Sigmoid(t(new_student) %*% parameters))
+```
+ARRIBA: decimos para un nuevo estudiante que ha sacad 25, 78 vemos: le aplico la sismoide para que segun se acerque a los extremos tire (o 1 o 0): y me sale 0.013 y como no admitido es 0 y este tiende a 0: NO ADMITIDO
+(con valores como 0,62, por ej, tendremos que valorar el criterio de negocio)
+
+Is he out? :-( YAS
+
+Now, We're gonna to try other option
+
+```{r}
+if (!require("gradDescent")) install.packages("gradDescent")
+# load
+library("gradDescent")
+```
+
+New Gradient Descent version
+
+```{r}
+# We want to minimize the cost function. Then derivate this funcion
+TestGradientDescent2 <- function(iterations = 1200, learning_rate = 0.25, the_data) {
+  
+  # label in the last column in dataSet
+  model <- gradDescentR.learn(dataSet = the_data, featureScaling = TRUE, scalingMethod = "VARIANCE", 
+                              learningMethod = "GD", control = list(alpha = learning_rate, maxIter = iterations), 
+                              seed = 1234)
+  
+  model
+}
+
+# How to use
+TestGradientDescent2(the_data = data)
+
+# Now, the exercises. Use training and test set, change the value of alpha...
+```
+
+## Plus lesson - Unit test - Testing our code
+
+Unit tests are small functions that test your code and help you make sure everything is alright. To do this in R, the *testthat* package can be used as follows:
+
+```{r}
+# Install if not installed
+if (!require("testthat")) install.packages("testthat")
+# load
+library(testthat)
+```
+
+Now, we can check the code for the *TestGradientDescent* function.
+
+```{r}
+test_that("Test TestGradientDescent",{
+  parameters <- TestGradientDescent(X = X, Y = Y)
+  # probability of admission for student (1 = b, for the calculos)
+  new_student <- c(1,25,78)
+  prob_new_student <- Sigmoid(t(new_student) %*% parameters)
+  print(prob_new_student)
+  expect_equal(as.numeric(round(prob_new_student, digits = 4)), 0.0135)
+  # Fail, test
+  # expect_equal(as.numeric(round(prob_new_student, digits = 4)), 0.0130)
+})
+```
+
+
+# Assignment
+
+1. Test the *TestGradientDescent* function with the training set (*4_1_data.csv*). Obtain the confusion matrix. 
+
+
+```{r}
+#Para generar una Matriz de Confusion: buscar las predicciones con la situación real
+
+parameters <- TestGradientDescent(X = X, Y = Y) #llamamos a los parametros de la funcion
+est.predict <- rep(0,length(Y)) #replicamos los valores del vector y le damos la longitud deseada del output vector fundamentada en Y
+
+#Creamos un bucle que recorra el vector y asignar 0 o 1: no admitido y admitido
+
+for (i in 1:length(Y)) {
+  estudiantes <- c(1, X[[i,2]], X[[i,3]]) #Se extraen 2 calificaciones que determinan si si o si no
+  estudiantes.probabilidad <- Sigmoid(t(estudiantes) %*% parameters) #valoramos en porcentaje las notas
+  if (estudiantes.probabilidad > 0.65) { #criterio de negocio asignado aleatoriamente como proporcion para aprobar
+    est.predict[i] <- 1
+  }
+}
+
+MatConfusion <- table(data$label, est.predict, dnn = c("Actual", "Predicho"))
+MatConfusion
+
+```
+
+
+2. Obtain a graph representing how the cost function evolves depending of the number of iterations.
+
+```{r}
+#Evolucion dependiendo de las iteraciones: objetivo minimizar funcion de coste
+
+#trabajamos con un vector inicializado en 0, asociamos la posicion del vector a la iteracion
+
+iteraciones <- 1:1200 #establezco 1200 iteraciones
+it_coste <- rep(0, length(iteraciones)) #replicamos los valores del vector con la longitud de las iteraciones recorridas para encontrar el punto minimo (global)
+Coste_fin <- function(X, Y) { #funcion de los parametros: las notas del examen 1 y 2 y si han sido admitidos
+  for (iterations in iteraciones) {
+    parameters <- rep(0, ncol(X)) #buscar b y W que minimicen la funcion de coste: los parametros de la funcion optimizada que son b y W y los inicializamos al principio a 0
+    optimizar_par <- optim(par = parameters, fn = CostFunction, X = X, Y = Y, 
+                                     control = list(maxit = iterations))
+    #optimizamos los parametros mediante derivadas que llevaran al punto minimo; cuanto este acaba despues de establecer una serie de iteraciones accedemos al atributo par
+    parameters <- optimizar_par$par #reescribimos parametros para optimizarlos y llegar al minimo
+    
+    #lo guarda en la variable convergencia y en la posicion de iteracion de coste
+    it_coste[iterations] <- convergence <- c(CostFunction(parameters, X, Y)) #coste de la iteracion 10 quiero guardarlo en el array en la cajita 10
+  }
+  return(it_coste) 
+}
+graf_coste <- Coste_fin(X,Y)
+plot(iteraciones, graf_coste, "l", main = "Evolución coste determinado por iteraciones", xlab = "Iteraciones", ylab = "Función de coste")
+
+#El error nunca puede subir: este grafico se está actualizando si mejora
+#el problema esque para este proceso estoy haciendo n * factorial de n : revienta la memoria
+```
+
+
+
+
+
+3. Explore other options using the *optim* function (see the methods section of the documentation). Explore other ways in R for estimating the Gradient Descent. 
+
+4. Explain why is not a trivial task to calculate the Gradient Descent. What happens if we have a very high dimensional problem?
+
+5. Optional (+0.5 - 1 points in final grade). 
+
+    + Implement the algorithm step by step using the update rule and an iterative algorithm, do not use the *optim* function.
+    + Research about regularization in logistic regression and explain it. 
+
+Explain your work results using the **RMarkdown format**. 

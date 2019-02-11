@@ -1,0 +1,912 @@
+---
+title: "Tecnicas de Reduccion"
+output: html_notebook
+---
+1. ACP o ANALISIS DE COMPONENTES PRINCIPALES
+- Tecnicas de interdependencia. Determina de algun modo: LAS RELACIONES INTIMAS entre las variables existentes.
+- Objetivo: construir nuevas variables, artificiales a partir de una combinacion LINEAL de las originales, con la caracteristica de ser INDEPENDIENTES ENTRE SI.PEro es dif del ANALISIS FACTORIAL(suele confundirse)
+- La proyeccio ́n ortogonal de las observaciones origi nales sobre este nuevo eje nos proporciona las abscisas de los puntos en este eje
+- A medida que vamos incrementando el angulo, se incrementa el % de la varianza explicada
+
+OBJETIVO: determinar el angulo que explica la mayor parte de la varianza, cuando seobtiene la mayor varianza explicada; se obtiene el eje que explica el mayor % de la variable explicada
+- Una sola variable no va a explicar el 100% de la varianza, por tanto, despues de obtener un porcentaje con la varianza explicada con la observacion X1, buscamos otra variable a el asociada que recoja el MAXIMO DE LA VARIANZA que no ha sido explicada por la primera variable.
+- LA SEGUNDA VARIABLE siempre es ORTOGONAL a X1 (primera)
+
+Los COMPONENTES PRINCIPALES:
+- La orientacion o configuracion de los puntos en el espacio no varia; podemos sin embargo referirlos tanto a los nuevos ejes como a los antiguos
+- Las proyecciones sobre los nuevos ejes dan lugar a las nuevas puntuaciones. Estos nuevos ejes son los COMPONENTES PRINCIPALES y los valores sobre los ejes son las PUNTUACIONES
+- Las nuevas variables X1y X2 estrellita son COMBINACION LINEAL de las originales y media Exi=0 (centradas)
+- La suma total de los cuadrados permanece igual
+- La varianza total no se ve alterada, por tanto, no hay ni perdida ni ganancia de informacion. 
+- La primera variable siempre RECOGE LA MAX VARIANZA que las otras, y la segunda aportará varianza al % total explicado, todas las componentes principales explican toda la varianza.
+- Las nuevas variables o componentes principales estan INCORRELADAS (son independientes)
+
+Cada componente principal explicará la mayor parte de la varianza no explicada por componentes principales anteriores y todas estarán INCORRELADAS.
+
+
+2. ACP como TECNICA DE REDUCCION DE LA DIMENSION:
+- cuando una variable nueva o Comp Principal explica un nuevo alto del % total de la varianza explicada, perder otra componente que explique poco % no es una gran perdida de informacion (suele hacerse a partir de 3 o 4 componentes)
+- OBJETIVO: hasta qué punto MENOS VARIABLES pueden recoger CORRECTAMENTE LA INFO contenida en el conjunto de datos.Es decir, capturar la configuracion de los datos, en un ESPACIO de MENOR dimension a la original.
+
+---- Se emplea: en el caso de que la varianza de unas pocas COMPONENTES PRINCIPALES sea suficiente para explicar el problema se puede REDUCIR LA DIMENSION DEL PROBLEMA empleando el ACP en vez de la variables originales: es decir el ACP se usa como una tecnica de REDUCCION DE LA DIM del problema.
+
+- En la practica:
+   - La obtencion de componentes principales:se encuentra en los AUTOVALORES de la matriz de COVARIANZAS
+   - Los autovalores proporcionan la VARIANA de cada una de las NUEVAS VARIABLES (los componentes principales) 
+   - Los autovectores: se emplearan como VECTORES TRANSFORMADORES de las variables originales en la obtencion de las nuevas.
+   
+----------------------------------------------------------
+AHORA: la suma de los cuadrados de los coeficientes de las variables en un componente es UNO y la suma de los productos cruzados de los coeficientes de dos variables en un componente principal por los de las mismas dos variables en otro es CERO
+----------------------------------------------------------
+
+ACP: a pesar de ser una tecnica relativamente sencilla en la que las componentes principales formadas son combinacion lineal de las originales, hay que tomar en cuenta:
+1. Conocer el EFECTO que el tipo de datos (centrados o tipificados) tienen sobre el analisis.
+2. Si realmente debe utiizarse esta tecnica y la ganancia que se obtiene al ajustar los datos
+3. El num de componentes principales por el que optar al reducir la dimension
+4. Interpretacion y puntuacion a cada uno de los CP.
+
+
+CONSIDERAR:
+A. 
+La matriz de covarianzas recoge la IMPORTANCiA RELATIVA de las varianzas de las variables en el momento de proceder a su diagonalizacion
+- Los coeficientes de las variables recogeran precisamente ESA influencia
+- Asi, si una variable tiene una alta varianza respecto de la varianza total, el coeficiente que le acompaña el componente principal sera ́ necesariamente elevado, reflejando precisamente la importancia que la variable ten ́ıa en el conjunto de observaciones iniciales.
+
+Esta es la razon que lleva a diagonalizar GENERALMENTE la matriz de correlaciones, pues al dividir la covarianza por el producto de las desviaciones t ́ıpicas elimina precisamente la influencia de la variabilidad original de las variables
+- Pero si queremos que la variablidad quede reflejada entonces simplemente utilizamos la MATRIZ DE COVARIANZAS
+
+B. 
+
+En el caso de que los datos esten tipificados, podemos considerar el test de esfericidad de Bartlett para contrastar la asociacion.Si se incrementa el tamaño muestral este test se queda corto.
+
+Tras aplicar el ACP podemos emplear otros analisis:
+- Si los datos tipificados (ANFAC) emplear la regla de Kaiser aunque lleva a infra y a sobredimensionamiento en algunos casos.
+- Mantener solo los ÇCP estadisticamente significativos
+
+---------------------------------------------------------------------------------------------------
+DIFERENCIA ENTRE ACP Y ANFAC
+- El objetivo del ACP (cuando se emplea como metodo de la reduccion de la dimension del problema) es REDUCIR EL NUM DE VARIABLES originales hasta un NUMERO MENOR DE componentes de forma que cada uno de ellos forma un INDICE de las variables originales; el nu ́mero de com ponentes mantenidos recogera ́ la mayor parte posible de la varianza de los datos.
+  - Explicacion de VARIANZA DE LAS VARIABLES
+  - formadda por indices
+- El ANFAC: identifica la estructura subyacente de las variables y explica la interaccion entre ellas. Ademas, 
+  - BUSQUEDA DE CORRELACION ENTRE LAS VARIABLES
+  - Formada por factores
+```{r}
+# 978 observaciones de planteamiento de 10 bonos:2 de enero de 1995 y el 30 de septiembre de 1998. 
+  # 949 primeras observaciones (denominadas observaciones activas) y las 9 primeras variables (las variables activas); uno de los objetivos será emplear las observaciones 950 a 978 (llamadas observaciones suplementarias) para predecir el valor del bono a 10 años
+
+
+# Tiene sentido llevar a cabo el ACP: comprobar con análisis de la matriz de correlaciones, el del determinante de dicha matriz, la prueba de esfericidad de Bartlett, el KMO o el MSA;
+```
+
+En primer lugar vamos a cargar las librerias para ver a qué tipo de datos nos enfrentamos.
+- Como hemos señalado en la motivación del trabajo, denominamos observaciones ACTIVAS a las empleadas para efectuar el ANALISIS; observaciones SUPLEMENTARIAS, a las que usaremos para predecir; variables activas y suplementarias, misma definición las anteriores pero en relación con las variables.
+```{r}
+library(factoextra)
+library(FactoMineR)
+TIUSD <- read.csv(file = 'ACPTIUSD.csv', sep = ";")
+```
+
+Aquí, trataremos como observaciones activas las 949 primeras y suplementarias las 950 a 978; y como variable suplementaria, a predecir, la IRS.10Y. Leemos en encabezamiento y la cola de los datos
+
+```{r}
+head(TIUSD)
+tail(TIUSD)
+```
+Ahora vamos a SELECCIONAR VARIABLES y FILTRAR:
+```{r}
+TIUSD.act <- TIUSD[1:949,1:9] # de la 1 a la 949 y de la columna 1 a la 9
+head(TIUSD.act)
+str(TIUSD.act)  # Informacion sobre las variables, la X es un factor con 978 niveles
+```
+
+Dado que tenemos una columna de fechas, procedemos a efectuar un tratamiento sobre ellas. Creamos en primer lugar un vector de fechas, para poder así, a continuación, extraer la primera columna de las fechas del objeto de trabajo.
+
+Despues de estas TRANSFORMACIONES, procedemos al ANALISIS EXPLORATORIO DE LOS DATOS.
+
+```{r}
+Dates <- as.Date(TIUSD.act$X, format = "%d/%m/%y")  # Convertimos a fechas: creacion de un vector
+TIUSD.act <- TIUSD.act[,-1]  # Extracción de la primera columna (de fechas) del objeto de trabajo
+head(Dates)
+```
+
+2. ANALISIS EXPLORATORIO 
+Este data frame contiene la información de POSICION y DISPERSION más relevante de las variables objeto de estudio.
+
+Podemos pasar ahora a estudiar las ASOCIACIONES entre las variables mediante el análisis de la matriz de CORRELACIONES Este examen será clave para determianr la posibilidad de reducir la dimensión, pues, como sabemos, es fundamental un alto grado de asociación para que el ACP tenga sentido desde una perspectiva de reducción de dimensión.
+```{r}
+summary(TIUSD.act)  # resumen de los datos
+# Resumen más detallado de lo que le vamos a pedir
+TIUSD.act_stats = data.frame( 
+        Min = apply(TIUSD.act, 2, min, na.rm=TRUE), # mín
+        Q1 = apply(TIUSD.act, 2, quantile, 1/4, na.rm=TRUE), # 1er cuartil
+        Med = apply(TIUSD.act, 2, median, na.rm=TRUE), # mediana
+        Mean = apply(TIUSD.act, 2, mean, na.rm=TRUE), # media
+        Q3 = apply(TIUSD.act, 2, quantile, 3/4, na.rm =TRUE), # 3er cuartil
+        Max = apply(TIUSD.act, 2, max, na.rm=TRUE) # Máx
+)
+TIUSD.act_stats=round(TIUSD.act_stats, 1)
+TIUSD.act_stats
+```
+```{r}
+cor.mat <-  round(cor(TIUSD.act),2)  # Correlacion con 2 decimales
+cor.mat
+```
+
+Podemos observar que tenemos un problema con los NA; para su tratamiento, tenemos dos opciones: emplear use="complete.obs" que elimina la fila completa allí donde #existe un NA (opción radical pero recomendada) o bien use="pairwise.complete.obs", que los elimina los pares de datos afectados; en principio, parecería más adecuada, pero puede dar lugar a problemas de matrices no definidas-positivas.
+
+Procedemos con la primera delas opciones señaladas:
+
+```{r}
+# MATRIZ DE CORRELACION SIN LAS NA
+cor.mat <-  round(cor(TIUSD.act, use = "complete.obs"),2) 
+cor.mat
+```
+
+Para conocer los niveles de significacion mas adelante (nds) utilizamos Hmisc
+
+```{r}
+# Convertir 
+require(Hmisc)
+cor.mat.nds <-  rcorr(as.matrix(TIUSD.act))
+cor.mat.nds 
+# Se generan 3 cosas: la matriz de CORREALACIONES,R; el NUM de de observaciones n; y los nds.
+
+# VISUALIZACION de la matriz:
+# 1. con un CORRELOGRAMA
+require(corrplot)
+corrplot(cor.mat, type = "lower", order = "original", 
+         tl.col = "black", tl.cex = 0.7, tl.srt = 45)  # las correlaciones positivas en azul, las negativas en rojo
+
+# type = lower: queremos ver lo que hay por debajo de la diagonal
+# addrect = 3: añade tres rectángulos de color a las agrupaciones generadas con order="hclust", que sustituye el orden orignal (dado por el anterior order="original")
+
+# 2.  CHART de correlaciones con el paquete PerformanceAnalytics
+require(PerformanceAnalytics)
+chart.Correlation(TIUSD.act, histogram=TRUE, pch=19)
+
+```
+
+En este gráfico observamos:
+- La distribución de cada variable en la diagonal;
+- Por debajo, los diagramas de dispersión por pares con línea de ajuste;
+- Por encima, el valor del coef de corr con el nds como estrellas; p valores(0, 0.001, 0.01, 0.05, 0.1, 1) <=> símbolos(““,”“,””, “.”, " “)
+
+También podemos probar con un mapa de calor; definimos en primer lugar la paleta de colores que queremos emplear.
+
+https://www.r-bloggers.com/r-using-rcolorbrewer-to-colour-your-figures-in-r/
+
+```{r}
+# Mapa de Calor
+col = colorRampPalette(c("red", "white", "blue"))(20)
+heatmap(x = cor.mat, col = col, symm = TRUE)  # la MATRIZ ES SIMETRICA ENTONCES PONER SYMM TRUE
+
+```
+
+3. Ver la aplicacion del ACP
+
+A. Índice KMO y prueba de esfericidad de Bartlett para verificar la idoneidad del ACP - ANFAC
+- El KMO se realiza a partir de la MATRIZ DE CORRELACIONES PARCIALES.
+
+```{r}
+# Obtener la INVERSA de la matriz de correlaciones
+invR <-  solve(cor.mat)
+# mientras que, para la matriz de correlaciones parciales, empleamos la biblioteca ppcor
+require(ppcor)
+# Obtenemos en primer lugar la matriz sin NA’s
+TIUSD.act.C <- TIUSD.act[complete.cases(TIUSD.act),]
+
+# Solicitar entonces una lista con elementos como la matriz de correlaciones parciales (estimate), los p-valores, el valor del estadístico t (t-statistic), el tamaño muestral (n), etc, mediante
+p.cor.mat <- pcor(TIUSD.act.C) # para así conseguir la matriz de corrleaciones parciales a partir de “$estimate”
+
+(p.cor.mat2 <- as.matrix(p.cor.mat$estimate))
+
+# Podemos calcular el KMO GLOBAL
+kmo.num <- sum(cor.mat^2) - sum(diag(cor.mat^2))
+kmo.denom <- kmo.num + (sum(p.cor.mat2^2) - sum(diag(p.cor.mat2^2)))
+(kmo <-   kmo.num/kmo.denom)  # devuelve 0.84: elevado, por encima de 0,8.
+```
+
+```{r}
+# Calculamos ahora el MSA o KMO parcial para cada una de las variables:
+
+p.cor.mat2 <- data.frame(p.cor.mat2)  # antes la hacemos un df
+(rownames(p.cor.mat2) <-  c(rownames(cor.mat))) # tenemos los nombres de las columnas
+(colnames(p.cor.mat2) <- c(colnames(cor.mat)))  # y los de las columnas que son los mismos 
+for (j in 1:ncol(TIUSD.act)){
+        kmo_j.num <- sum(cor.mat[,j]^2) - cor.mat[j,j]^2
+        kmo_j.denom <- kmo_j.num + (sum(p.cor.mat2[,j]^2) - p.cor.mat2[j,j]^2)
+        kmo_j <- round(kmo_j.num/kmo_j.denom,4)
+        print(paste(colnames(TIUSD.act)[j],"=",kmo_j))
+        }  # los KMO parciales
+```
+En cuanto al test de Bartlett, no será válido si el número de observaciones supera las 100, así que MUESTREAMOS
+
+```{r}
+matrizcorr  # sacamos la matriz de correlaciones
+
+n = nrow(TIUSD.act)
+p = ncol(TIUSD.act)
+(chi2 = -(n-1-(2*p+5)/6)*log(det(cor.mat)))
+(ddl = p*(p-1)/2)  # grados de libertad
+```
+
+Nos ofrece unos valores del estadístico $^2 = $ 1698.146, con un número de grados de libertad igual a 28, lo que supone un nivel de significación del estadístico de contraste igual a 0.
+
+Muestreamos 70 observaciones y aplicamos el test (rebajando a 25 observaciones, la conclusión es la misma)
+
+```{r}
+set.seed(1234)  # para muestrear establecemos una semilla
+TIUSD.mas <- TIUSD.act[sample(nrow(TIUSD.act), 70), ]  # creamos un df con 70 observaciones
+n <-  nrow(TIUSD.mas)
+p <-  ncol(TIUSD.mas)
+chi2 = -(n-1-(2*p+5)/6)*log(det(cor.mat))
+ddl = p*(p-1)/2
+print(chi2)
+print(ddl)
+print(pchisq(chi2,ddl,lower.tail=F))  # nivel de significacion del estadistico
+
+# La conclusion es la misma
+```
+
+Comprobamos que el valor del estadístico de contraste χ2<0.05
+ luego rechazamos H0
+
+Podemos también aplicarlo desde el paque psych, que cargamos; el resulado es el mismo
+
+
+```{r}
+require(psych)
+print(cortest.bartlett(cor.mat, n=nrow(TIUSD.mas)))  # sacamos con Bartlett todos indices anteriores con la muestra de 70 observaciones
+```
+
+IDENTIFICACIÓN DE LOS COMPONENTES PRINCIPALES
+Para ello, podemos usar varias opciones de identificación; por ejemplo, la siguiente proviene de FactoMineR:
+
+PCA(X, scale.unit = TRUE, ncp = 5, graph = TRUE) X: data frame con las observaciones por filas scale.unit : valor lógico. Si TRUE es que los datos se escalarán a varianza unitaria antes del análisis. Esta normalización evita la dominación de ciertas variables debido a su mayor dimensión. Si trabajamos con la matriz R será FALSE ncp: Número de dimensiones en la solución final; en ACP debería ser igual al nº original de variables graph: valor lógico; muestra un gráfico si TRUE
+
+```{r}
+TIUSD.acp <-  PCA(TIUSD.act, scale.unit = TRUE, ncp = ncol(TIUSD.act), graph = TRUE)
+# Aqui, se sustituye los NA por la media de cada variable; podemos hacerlo también sobre el objeto que continen las observaciones completas, TIUSD.act.c. Observamos el objeto list creado con el proceso PCA
+
+print(TIUSD.acp)
+# Y mediante la siguiente orden, obtenemos los autovalores de los CCPP y el tanto por ciento de la varianza explicada
+autoval <-  TIUSD.acp$eig #devuelve 
+round(autoval, 2)
+```
+
+Representamos ahora graficamente los autovalores:
+```{r}
+barplot(autoval[, 2], names.arg=1:nrow(autoval), 
+        main = "Varianza explicada por los CCPP",
+        xlab = "Componentes Principales",
+        ylab = "Porcentaje explicado de la varianza",
+        col ="steelblue",
+        ylim=c(0,105))
+
+# vemos graficamente la varianza explicada por los componentes principales
+
+#Y añadimos una línea que conecte las barras y otra que informe del porcentaje acumulado de la varianza explicada
+
+barplot(autoval[, 2], names.arg=1:nrow(autoval), 
+        main = "Varianza explicada por los CCPP",
+        xlab = "Componentes Principales",
+        ylab = "Porcentaje explicado de la varianza",
+        col ="steelblue",
+        ylim=c(0,105))
+lines(x = 1:nrow(autoval), autoval[, 2], 
+      type="b", pch=19, col = "red")
+
+lines(x = 1:nrow(autoval), autoval[, 3], 
+      type="o", pch=21, col = "blue", bg="grey")
+```
+
+Como vemos, sólo el 1er CP explica más del 80% de la varianza, los dos primeros el 98%. La reducción de dimensión es enorme.
+
+Hacemos el mismo gráfico con el pack factoextra:
+
+```{r}
+fviz_screeplot(TIUSD.acp)+
+        labs(title="Scree plot / Gráfico de sedimentación", x="Factores / Dimensiones /Ejes", y="% Varianza explicada")+
+        geom_line(aes( y = autoval[,3]), linetype="dashed", color = "red")+
+        geom_point(y = autoval[,3], color="red")+
+        theme_minimal()
+
+# Grafico de sedimentacion que explica lo mismo graficamente
+
+# Podemos representar los individuos o la variables en un mapa de componentes
+plot.PCA(TIUSD.acp, axes = c(1,2), choix=c("ind"))  # axes: señala los componentes que queremos representar en el mapa, maximo 2 de ellos.
+
+plot.PCA(TIUSD.acp, axes = c(1,2), choix=c("var")) # choix=c(ind) ; si quisiéramos representar los individuos en vez de las variables.
+
+```
+
+Ahora lo mismo con FactoMineR
+```{r}
+fviz_pca_var(TIUSD.acp)
+
+# Las coord de las variables en el espacio, vienen dadas por:
+TIUSD.acp$var$coord 
+# mientras que las de las variables (las seis primeras) lo son mediante
+head(TIUSD.acp$ind$coord) 
+
+# La calidad de la representación viene dada por la medida cos2, los cuadrados de las cargas factoriales o comunalidades
+TIUSD.acp$var$cos2
+
+# Comprobar!!!!! Que la suma de las comunalidades es uno en cada variable
+
+apply(as.matrix(TIUSD.acp$var$cos2), 1, sum)
+# Y comprobamos que el autovalor de cada factor $j $es la suma de los cuadrados de los aij
+CP1 <- TIUSD.acp$var$coord[,1]
+CP1
+
+CCP2 <- CP1^2
+CCP2
+sum(CCP2)
+# Cuando, para representar una variable, son necesarios más de 2 CCPP, la variable estará alejada del borde del círculo (no es el caso); las variables que en los 2 CCPP que definen el mapa quedan cercanas al centro tienen poca posibilidad de ser correctamente representadas por ellos. El siguiente gráfico plantea en escala de colores la contribución de los factores extraídos en la explicación de cada variable, es decir su comunalidad
+fviz_pca_var(TIUSD.acp, col.var="cos2") +
+        scale_color_gradient2(low="white", mid="blue", 
+                              high="red", midpoint=0.5) + theme_minimal()
+
+# También podemos querer conocer la contribución de las variables a los CCPP. A mayor valor de la medida (expresado como porcentaje de la relación por cociente entre la comunalidad de la variable respecto del autovalor del CP), mayor contribución de la variable.
+TIUSD.acp$var$contrib # la contribucion de cada variablae.
+
+# comprobamos que suma 100 por columnas
+apply(as.matrix(TIUSD.acp$var$contrib), 2, sum) 
+
+# Esta contribucion puede visualizarse asi:
+fviz_contrib(TIUSD.acp, choice = "var", axes = 1) # axes=1 se refiere al nº de eje o CP que queremos representar;
+```
+La línea roja representa la uniformidad en la representación: si cada variable tuviese un poder explicativo uniforme cada una contribuiría en 1p
+(aquí, 18=12.5%
+); un valor por encima de este significa una contribución mayor.
+
+Compruébese como para el eje 2 los depósitos a corto plazo son esenciales
+
+Para conocer la contribución de las variables a la explicación de un número concreto de CCPP, simplemente sumamos el producto de la contribución de la vble en cada uno de ellos por el valor propio de cada uno de ellos:
+
+```{r}
+A <- as.matrix(TIUSD.acp$var$contrib[,1:2])/100  # lo expresamos en tanto por uno
+B <- as.matrix(TIUSD.acp$eig[1:2,1])
+A%*%B # producto matricial 
+```
+
+Representación de las variables que más contribuyen a la explicación de un factor: Las tres variables que más contribuyen al eje 1
+```{r}
+fviz_contrib(TIUSD.acp, choice = "var", axes = 1, top = 3)  # Las top 3 del que mas contribuyen al eje 1
+fviz_contrib(TIUSD.acp, choice = "var", axes = 2, top = 3)  # Las top 3 del que mas contribuyen al eje 2
+
+# Y, en cuanto a la contribución de cada variable a la explicación de los dos ejes principales, podemos verlo en escala de color
+
+fviz_pca_var(TIUSD.acp, col.var="contrib") # que podemos modificar facilmente..
+fviz_pca_var(TIUSD.acp, col.var="contrib") +
+        scale_color_gradient2(low="steelblue", mid="white", 
+                              high="darkblue", midpoint=50) + 
+        theme_minimal()
+```
+
+Como podemos observar, no existe apenas variación por la enorme capacidad de explicación de todas las variables.
+
+La contribución de las observaciones degradadas por importancia en la explicación podemos representarla con la siguiente orden:
+
+```{r}
+fviz_pca_ind(TIUSD.acp, alpha.ind="contrib") +
+        theme_minimal() 
+```
+
+
+ROTACIONES FACTORIALES O VARIMAX
+Para ello, emplearemos la librería prcomp, cargada por defecto en la instalación básica dentro de stats.
+
+En primer lugar, normalizamos los datos completos
+
+
+```{r}
+TIUSD.norm = data.frame(scale(TIUSD.act.C))  # Comprobamos que esta correctamente efectuada la operacion de normalizacion
+summary(TIUSD.norm)  # lo veos en que la media es 0 para todos
+round(sapply(TIUSD.norm, mean, na.rm = T), 2)  # aqui lo vemos mas especificamente
+sapply(TIUSD.norm, sd, na.rm=T)  # suma unitaria de 1
+
+# Aplicamos el ACP
+TI.acp=prcomp(TIUSD.norm )
+summary(TI.acp)
+# Efectuamos las comprobaciones
+TI.acp$sdev
+(TI.acp$sdev)^2
+sum((TI.acp$sdev)^2)
+
+# Generamos un grafico de saturacion o SCREEPLOT
+screeplot(TI.acp, type="lines")
+
+
+```
+Cargamos la librería qcc, de gráficos de control de calidad
+
+```{r}
+require(qcc)
+
+# calculamos las varianzas
+varianzas <-  TI.acp$sdev^2
+pareto.chart (varianzas, ylab="Varianzas")
+
+# en cuanto a la rotacion la obtenemos
+TI.acp$rotation  
+#ofreciéndonos la siguiente orden las cargas del 1er eje
+TI.acp$rotation[,1]
+
+#Al haber normalizado los factores, la suma del cuadrado de las cargas debe ser 1:
+sum(TI.acp$rotation[,1]^2)
+#En cuanto a las cargas de la primera variable,
+TI.acp$rotation[1,]
+sum(TI.acp$rotation[1,]^2)
+
+
+
+# Por último, efectuamos la rotación Varimax mediante
+TI.rot = principal(TIUSD.norm, nfactors=8, rotate="varimax")
+TI.rot$communality # obtenemos las comunalidades
+# y las cargas factoriales, comprobándose fácilmente que sum(rot.loadings^2) devuelve el “autovalor rotado”
+TI.rot$loadings 
+
+
+```
+
+Componentes Suplementarios: aquellos sobre los que se predice
+- Los componentes suplementarios (variables o individuos) no se emplean en la determinación de las componentes principales. Sus valores se predicen o ajustan en virtud del análisis previamente efectuado sobre individuos y variables activos.
+
+Especificación de los elementos suplementarios: 
+Para proceder a su especificación, esto es, a definir cuáles son a efectos del análisis, se procede como sigue:
+PCA(X, ind.sup = NULL, quanti.sup = NULL, quali.sup = NULL, graph = TRUE)
+
+Siendo:
+
+- x, un data frame donde los individuos aparecen por filas y las varibles por columnas;
+- ind.sup es un VECTOR NUMERICO que especifica los VALORES de los individuos suplementarios;
+- quanti.sup, quali.sup son vectores numéricos que especifican los índices de las variables suplementarias, respectivamente numéricas o categóricas;
+- graph es la orden para señalar si queremos o no una representación gráfica.
+En nuestro caso, procederíamos como sigue:
+
+```{r}
+supl.acp <- PCA(TIUSD[,-1], ind.sup = 950:978, quanti.sup = 10, graph = FALSE)
+
+# En cuanto a la variable en escala métrica, el bono a 10 años, su resultados previstos en términos de coordenadas, correlaciones y cos2 viene dados por
+
+supl.acp$quanti.sup
+
+# Visualizacion junto a las variables actuvas
+fviz_pca_var(supl.acp)
+
+# Mejoradas mediante
+fviz_pca_var(supl.acp,
+             col.var = "black",     #  variables activas
+             col.quanti.sup = "red" #  variables suplementarias métricas
+             )
+
+
+# solo queremos ver la suplementaria
+fviz_pca_var(supl.acp, invisible = "var")  # solo queremos graficar una
+
+# mientras que si lo quisiésemos hacer respecto de las activas, ocultaríamos las suplementarias de modo análogo:
+fviz_pca_var(supl.acp, invisible = "quanti.sup")
+# En cuanto a las observaciones suplementarias, el proceso es similar, e igualmente sencillo. Sus valores previstos vienen dados por
+supl.acp$ind
+
+# visualizacion de las observaciones suplementarias
+fviz_pca_ind(supl.acp, col.ind= "cos2", col.ind.sup = "red", repel = FALSE, 
+             pointsize=1,
+             labelsize = 3,
+             label = "sup",
+             #jitter = list(what = "label", width = NULL, height = NULL)
+             )
+
+# seleccionar aquellos individuos que tengan un alto cos2
+fviz_pca_ind(supl.acp, col.ind= "cos2", col.ind.sup = "red", repel = FALSE, 
+             pointsize=1,
+             labelsize = 3,
+             label = "sup",
+             select.ind = list(cos2=0.97),
+             #jitter = list(what = "label", width = NULL, height = NULL)
+             )
+# seleccionar a los 40 indiviuos con mayor cos2
+fviz_pca_ind(supl.acp, col.ind= "cos2", col.ind.sup = "red", repel = FALSE, 
+             pointsize=1,
+             labelsize = 3,
+             label = "sup",
+             select.ind = list(cos2=40),
+             #jitter = list(what = "label", width = NULL, height = NULL)
+             )
+```
+Esta posibilidad ofrecida por la opción list nos permite asimismo ver la contribución de las observaciones (mediante select.ind = list(contrib=40)) o incluso visualizar sólo algunos en concreto (mediante select.ind = list("50", "150", "525", "739"), por ejemplo)
+
+```{r}
+# (select.ind = list("50", "150", "525", "739"))
+```
+
+
+
+2. ANALISIS CLUSTER
+Def: Es una tecnica que se desarrolla para combinar observaciones en grupos, conglomerados o clusters con ciertos requisitos:
+- Considerar que los grupos deben ser homogeneos respecto de alguna caracteristica y considerar que las observaciones de cada grupo sean similares
+- considerar que cada grupo tiene que ser heterogeneo de los distintos grupos; las observaciones de cada grupo deben ser distintas de las de los demas grupos.
+
+Importante: la medida de la HOMOGENEIDAD o similitud que depende de los objetivos de cada estudio.
+
+OBJETIVO del analisis de conglomerados:
+Agrupacion de la observaciones en conglomerados lo MAS HOMOGENEO posible respecto de las variables de agrupacion.
+1. Tomar una medida de SIMILITUD
+2. Decision respecto del tipo de TECNICA de agrupacion: metodos jerarquicos y no jerarquicos
+3. Determinar el TIPO DE AGRUPACION para la TECNICA ESCOGIDA, para, antes de interpretar la soluci ́on alcanzada, decidir CUANTOS GRUPOS SERAN NECESARIOS.
+
+------- 
+En la agrupacion (segun una representacion grafica en ejes cartesianos), lo que ocurre es similar a lo que ocurre en el Analisis Factorial o ANAFAC: identificacion de relaciones subyacentes que permitan efectuar grupos.
+- DIFERENCIA: el analisis factorial se preocupaba de relaciones latentes entre variables, el analisis cluster se preocupa de relaciones de homogeneidad entre observaciones.
+
+Cuando se disponga de multiples observaciones y/o se trate de mas de dos variables, la identificacion grafica de conglomerados deja de ser posible, por lo que sera necesario recurrir a tecnicas analiticas.
+
+--------
+Ahora, MEDIDAS DE SIMILITUD: medidas de distancia, medidas de similaridad y coeficientes de correlacion.
+
+                          1. Medidas de DISTANCIA
+- La mas impte: La distancia EUCLIDEA (metrica de Mikowski)
+si n = 2 coincide
+con la euclidea, y si n = 1 es la denominada distancia Manhattan, city-block o de bloques
+
+Para otros valores de n, en la metrica de Minkovski, se obtienen otros tipos de distancias, que sin embargo son poco empleadas. 
+
+LO MALO: es invariante a los cambios de escala.
+- Es decir, si estamos comparando distancias entre cantidades monetarias (ej: 5000 - 6000 euros o 5 - 6 ) los resultados son diferentes para las distancias por tanto:
+  - Cuando tengamos este problema utilizamos la DISTANCIA ESTAISTICA (la euclidea para datos TIPIFICADOS) y la distancia de Mahalanobis.
+  
+  IMPORTANTE: 
+  ##########################
+  La distancia estadistica no es sino la distancia euclidea para datos tipificados, por lo que lo primero que deberia efectuarse es proceder a obtener 1.la muestra de observaciones tipificadas y calcular sobre ellas la distancia euclidea. 
+  - Tipificar implica hacer la istancia euclidea pero dividir cada observacion por la DESVIACION TIPICA
+  Comparada con la distancia euclidea, cada termino está ponderado por la inversa de su desviacion tipica, por lo que resulta obvio que variables muy dispersas tendran una poderacion muy pequeña y viceversa.
+  una variable con PEQUEÑA VARIANZA tendrá una ponderacion mayor  que una variable con gran variabilidad -- ESTO ES IMPRESCINDIBLE: ver si las variables tienen que ser tipificadas, esto determinará la formacion de grupos.
+  distancia de Mahalanobis supone una variacio ́n frente a las dos anteriores, al tener en cuenta la correlacio ́n entre las variables para su determinacio ́n. Es asimismo invariante ante cambios de escala. 
+###############################
+2. Medidas de SIMILARIDAD
+Metricas de medidas de similiaridad entre vriables binarias, con tablas de contingencia y se calcula con la proporcion de coincidencias (denominador todas las variables) y la proporcion de apariciones ( a veces faltan variables)
+              
+3. Coeficientes de CORRELACION de PEARSON
+- Medida que se emplea para medir la similitud entre 2 variables. No se considera como una metrica como tal pero se utiliza para cosas como (en un gran espacio calcular las distancias entre varios puntos)
+
+-----------------------------------------------------------------------------------------------------
+
+                                      CLUSTER JERARQUICO
+Parte de una MATRIZ que contiene las distancias (es decir la similitud entre variables aunque no sea una medida) entre todas las observacuones.
+
+- A partir de esto se forma el primer CLUSTER, formado por las variables que se encuentren a menor distancia.
+- Se determina entonces una NUEVA MATRIZ, formada por las distancias entre todas las observaciones y el nuevo grupo, que al estar formado por al menos dos observaciones requerira una tecnica de calculo de distancias
+    - Metodos de calculo:
+    1. Método del centroide
+    2. Metodo del vecino mas proximo o del encadenamiento simple
+    3. Metodo del vecino mas lejano
+    4. MEtodo del encadenamiento promedio
+    5. Metodo de WARD
+
+
+METODO DEL CENTROIDE:
+- En este metodo, cada individuo se sustituye por un individuo tipo denominado centroide del grupo, que es, la MEDIA ARITMETICA de las observaciones de los individuos que forman el cluster en cada una de las variables.
+EJ: grupo 1: s1 y s2 el centroide esta formado por la educacion en 5.5 años y media de 5.5 miles de eeuros en renta. 
+- La proximidad en los grupos se mide mediante la distancia euclidea (es decir, con una matriz de similaridad). Las que esten a menor distancia son las que forman otro grupo; aquellos que compartan la menor distancia cuadratica son los que mas se parecen y van formando otros grupos y se representan con el CENTROIDE, que se combinan para dar lugar a una nueva matriz de similariades.
+
+####### IMPORTANTE #########
+El metodo jerarquico de formacion de cluster ACTUA agrupando los elementos (inicialmente separados) de acuerdo con alguna METRICA predeterminada (en nuestro caso, la euclidea). En nuestro caso, ha sido el CENTROIDE quien nos ha dado la imagen del cluster en el espacio de variables predefinido.
+
+---- REPRESENTACION GRAFICA: DENDOGRAMA
+Los nu ́meros encerrados dentro de c ́ırculos representan las etapas en las que se consigue la agrupaci ́on en el proceso jera ́rquico. El eje de abscisas representa las observaciones del ejemplo y el de ordenadas recoge la distancia eucl ́ıdea entre los centroides de los clusters.
+
+y cual es el numero de clusters optimo? 
+
+- Hay mas metodos jerarquicos de agrupacion, pero emplean distintos procedimientos para calcular las distancias entre los distintos conglomerados.
+
+CONCLUSION: La distancia entre los conglomerados se determinaba a partir de la DISTANCIA EUCLIDEA entre los centroides de los distintos grupos
+
+
+METODO DEL VECINO MAS PROXIMO (encadenamiento simple):
+- el procedimiento difiere en el sentido de determinar la MENOR DISTANCIA ENTRE TODOS LOS POSIBLES pares de distancias entre los individuos de dos conglomerados. 
+  - Es decir, se calculan las disntancias cuadraticas entre el primer cluster formado y la observacion mas cercana y se van formando grupos 
+
+METODO DEL VECINO MAS LEJANO (encadenamiento completo): GRUPOS ESFERICOS!!!!!!
+Opuesta a la de arriba , en el sentido en que la distancia entre dos clusters es la MAXIMA entre todos los posibles pares de observaciones presentes en los dos clusters. 
+- Es edcir, aquellos a las que menor distancia maxima se encuentran.
+- El proceso continuar ́a tantas veces como sea necesario hasta fusionar finalmente todos las observaciones en un u ́nico conglomerado.
+
+
+METODO DEL ENCADENAMIENTO PROMEDIO:distancia entre dos clusters sera ́ la distancia promedio entre todos los pares de observaciones que lo conforman.
+- Es decir, las distancias entre 1 cluster con una observacion (suma) entre 2, seimpre respetando la distancia a la que se encuentran.
+
+
+METODO DE WARD: 
+!!!!! NO CALCULA DISTANCIAS!!!!!!!!!! --> Maximiza homogeneidad INTRACLUSTERS mediante la SUMA DE LOS CUADRADOS dentro de los grupos ya que trata de minimizarla, conocida como suma de los cuadrados RESIDUAL (W): es sino la DISTANCIA EUCLIDEA  de cada OBSERVACION respecto de la MEDIA DE SU GRUPO.
+-- el mejor grupo de clsuteres es aquel que minimiza W
+
+----------------------------------------------------------------------------------------------
+
+                                  OTROS METODOS JERARQUICOS:
+algoritmos aglomerativos como AGNES, los divisivos como DIANA o como los aso- ciados a una divisio ́n monot ́etica como MONA. En cual- quiera de ellos el decisor o analista no plantea el nu ́mero de clusters a priori sino que el algoritmo construye una jerar- qu ́ıa de a ́rbol que contiene, de forma impl ́ıcita, ese nu ́mero de grupos.
+
+- AGNES: agrupacion aglomerativa (AGNES): conjunto dde observacuones y obtenemos MATRIZ DE DISTINTOS o medidas de disimilaridad o incluso matriz de correlaciones.
+
+- Analisis divisino (DIANA) . Los metodos jerarquicos con divisivos actuan de modo opuesto a los aglomerativos: parten de la presencia de un u ́nico grupo y van efectuando particiones de cara a crear tantos grupos finales como obser- vaciones existen. 
+
+----------------------------------------------------------------------------------------------
+
+CLUSTERS NO JERARQUICOS: EL NUMERO DE GRUPOS DEBE SER CONOCIDO DE ANTEMANO
+- Las observaciones se dividen en k grupos cada uno representando un cluster.
+Pasos:
+1. Determinacion de un numero inicial k de centroides o semillas, siendo k el numero de clusters.
+2. Asignacion de CADA OBSERVACION al cluster del que se encuentre mas proximo.
+3. Reasignacion de cada OBSERVACION en el cluster que le corresponda de acuerdo con una REGLA DE PARADA previa.
+4. FINALIZACION del proceso si no hay nuevas reasignacio- nes o si la reasignacio ́n efectuada hasta ese momento cumple con el criterio de parada establecido; en otro caso, volver a la anterior etapa 2
+
+DIFERENCIAS entre algoritmos no jeraquicos:
+- el metodo empleado para obtener centroides y regla de reasignacion de observaciones
+
+Metoos de obtencion de semillas iniciales:
+- Seleccion de las primeras k observaciones sin valores perdidos como centroides o semillas para los clusters iniciales
+- SELECCION DE LA PRIMERA observacion completa como semilla del primer cluster; la semilla del segundo conglomerado se determinara de manera que la distancia desde la anterior semilla sea superior a un valor predeterminado
+- La tercera semilla se determinara conforme al mismo criterio, esto es, que la distancia desde ella a las anteriormente escogidas supere el umbral determinado y asi sucesivamente.
+
+Una vez identificadas las semillas, los conglomerados iniciales se forman asignando cada una de las restantes n − k observaciones a las SEMILLAS A LAS QUE MENOR DISTANCIA SE ENCUENTREN.
+
+Reasignacion de observaciones a los CLUSTERS:
+- DETERMINAR el centroide de cada cluster y reasignar las observaciones al cluster cuyo centroide SE ENCUENTRE MAS CERCANO. (luego los centroides se recalculan AL FINAL DEL PROCESO; se recalcula tantas veces hasta no superar el umbral de convergencia)
+    - Otras formas:  En el proceso SOLO los centroides del grupo de destino y del grupo de salida de la observacion se recalculan.
+    - Otro: procesos de escalada (minimizar algun criterio estaddistico predeterminado)
+      - traza de la matriz de suma de cuadrados y produc- tos cruzados dentro de los grupo (la W)
+      - determinante de la matriz de suma de cuadrados y productos cruzados dentro de los grupos
+      - traza de W−1B, siendo W la matriz de suma de cuadrados y productos cruzados dentro de los gru- pos y B la matriz de suma de cuadrados y produc- tos cruzados entre los grupos
+      - mayor autovalor de W−1B.
+      
+------------------------------------------------------------------------------------------------
+ALGORITMOS DE CLASIFICACION dependiendo de la COMBINACION EMPLEADA DE METODOS DE DETERMINACION de la SEMILLA INICIAL y metodo de REASIGNACION
+------------------------------------------------------------------------------------------------
+
+Algoritmos (no jerarquicos): 
+- ALGORITMO DE K MEDIAS O K MEANS: objetivo: dividir la muestra en un NUMERO PREDETERMINADO de grupos.
+
+ETAPAS:
+1. Determinacion de los k puntos como centroides
+a) asignacion ALEATORIA de los individuos a los grupos y determinacio ́n de los centroides de los grupos asi formados
+b) selecci ́on como centroides los k puntos mas ALEJADOS entre si
+c) PRESELECCION de los grupos con informacio ́n a priori y determinaci ́on de sus centroides, o incluso seleccionando a priori los centroides.
+    
+2. C ́alculo de las distancias eucl ́ıdeas de cada elemento a los centroides de los k grupos y asignacio ́n de cada observaci ́on al grupo de cuyo centroide se encuentre ma ́s pro ́ximo
+- Asignacion secuencial en la que se van recalculando los centroides.
+
+3. Mejora el criterio de parada
+4. Finaliza el criterio de parada si no mejora 
+
+IMPT: En el caso de este algoritmo, el criterio de optimilidad empleado es el de MINIMIZAR la suma de cuadrados dentro de los grupos para todas las variables --> criterio equivale a la MINIMIZACION de la suma ponderada de la varianzas de las variables en los grupos.
+
+as varianzas de las variables en los grupos informan del grado de dispersio ́n existente en los mismos: MEDIDA DE HETEROGENEIDAD y max homogeneidad en el grupo
+- tbb se puede minimizar las distancias euclideas
+
+
+¿COMO FUNCIONA?
+El algoritmo de k-medias alcanza la PARTICION OPTIMA CON LA REESTRICCION de que en cada ITERACION SÓLO se mueva un elemento de un grupo a otro. Su funcionamiento es el siguiente:
+- Se parte de una ASIGNACION INICIAL
+- Se comprueba que si desplazando algun elemento se consigue reducir la tr(W)
+- Si es así, se recalculan los CENTROIDES y se vuelve al paso anterior. Si no se minimiza la tr(W) se CONCLUYE.
+Por lo tanto, el algoritmo resulta sensible a la asigna- cio ́n inicial y al orden de las observaciones. Es conveniente pues repetir el algoritmo con distintos valores iniciales y permutando las observaciones muestrales.
+
+CRITERIO DE TRAZA:
+- no resulta invariante ante cambios de escala, de manera que el caso de trabajar con variables en distintas unidades de medida conviene TIPIFICARLAS.
+- Empleo de metrica EUCLIDEA (distancias minimas): resulta en ESFERAS
+--- Se utiliza con variables CUANTITAVIAS (aunque se admiten algunas cualitativas), pero si hay mayoria CUALITATIVAs, entonces emplear metodos JERARQUICOS.
+
+------------------------------------------------------------------------------------------------
+DETERMINACION DEL NUMERO DE CLUSTERS
+
+EN EL CLUSTER JERARQUICO: Uno de los criterios empleaos consiste en determinar la DESVIACION TIPICA PONDERADA (dtp; root-mean-square total-sample standard deviation) de todas las vriables que forman el cluster. Se persigue que el valir de la DESV TIPICA sea lo suficintemente pequeño para indicar ausencia de HETEROGENEIDAD dentro del grupo.
+
+a) Tambien se utiliza el R2, entre valores de 0 y 1 se buscan valores muy bajos para minimizar las diferencias dentro de los grupos.
+
+b) r2 parcial; como hemos sen ̃alado anteriormente, el nuevo cluster se formar ́a mediante la fusi ́on de de dos clusters formados en las etapas previas. La diferencia entre la SCD ponderada del nuevo cluster y la suma de las SCD ponderadas de los clusters fundidos en la obtenci ́on del nuevo se denomina p ́erdida de homogeneidad. Si tal p ́erdida es nula significara ́ que el nuevo cluster se ha formado mediante la fusio ́n de dos totalmente homog ́eneos. Si, en cambio, la p ́erdida es elevada, sen ̃alara ́ que el nuevo cluster se ha formado mediante la fusio ́n de dos conglomerados muy heterog ́eneos.
+
+c)distancia entre clusters. Nuevamente, puesto que lo que se persigue es la creaci ́on de grupos homog ́eneos, el valor de la distan- cia debe ser pequen ̃o.
+- En el ca- so del METODO DEL CENTROIDE, la distancia SERA LA EUCLIDEA  entre los centroides de los grupos a fusionar (DISTANCIA AL CENTROIDE) ; si se ha seguido el del vecino m ́as pro ́ximo sera ́ la MENOR DISTANCIA EUCLIDEA entre todos los posibles pares de elementos; si se ha empleado el m ́etodo del vecino m ́as lejano, la distancia SERA LA EUCLIDEA MAXIMA entre todos los pares de sujetos; y en el caso del m ́etodo de Ward, ser ́a la suma de cuadrados entre grupos para ambos clusters.
+
+
+
+EN EL CLUSTER NO JERARQUICO: en Kmedias: es necesario predefinir el nu ́mero de grupos con los que se desea trabajar. Parece obvio que el criterio empleado no puede ser el de la homogeneidad, pues conseguir tal objetivo minimizan- do la SCD supone crear tantos grupos como observaciones (de manera que SCD = 0 siempre). Un procedimiento muy empleado (sin mucha justificaci ́on) es el de realizar un test F de reduccio ́n de variabilidad, comparando la SCD con k grupos frente a la SCD con k + 1 grupos., y determinando la reduccio ́n relativa de variabilidad al pasar a un grupo ma ́s.
+- las observaciones iniciales no tienen por- qu ́e verificar las condiciones de normalidad exigidas para la aplicacio ́n de la distribucio ́n F
+. si el resultado obtenido es superior a 10; emp ́ırica- mente, parece ofrecer buenos resultados
+-----------------------------------------------------------------------------------------------
+
+
+El analisis CLUSTER, primera aproximacion, AED y distancias
+
+```{r}
+# Analisis Exploratorio
+(quiebras <- read.csv('quiebras.csv', sep=";"))
+(quiebras <-  data.frame(quiebras[,-1], row.names = quiebras[,1]))  # hacemos que la primera columna del df se convierta en el NOMBRE de las filas
+
+# Quitamos los valores perdidos
+quiebras <- na.omit(quiebras)
+head(quiebras)
+
+quiebras_original <- quiebras
+head(quiebras_original)
+
+# Observamos los datos, o bien con un summary o con una funcion mas detallada
+summary(quiebras_original)
+
+q_stats <- data.frame(
+  Min = apply(quiebras_original[,-1], 2, min), # mínimo
+  Med = apply(quiebras_original[,-1], 2, median), # mediana
+  Mean = apply(quiebras_original[,-1], 2, mean), # media
+  SD = apply(quiebras_original[,-1], 2, sd), # Desviación típica 
+  Max = apply(quiebras_original[,-1], 2, max) # Máximo
+)
+
+q_stats <- round(q_stats, 1)
+head(q_stats)
+
+# ESCALADO DE VARIABLES:
+# OPCION 1: quiebras2 <- scale(quiebras)  que no funciona porque todas las vraiables deben ser NUMERICAS
+
+# -- desde aquí
+performScaling= T # on/off para experimentar 
+if (performScaling) {
+  for (colName in names(quiebras)) { # Loop sobre cada columna
+# Comprueba si la columna es de datos numéricos.
+    if(class(quiebras[,colName]) == 'integer' | class(quiebras[,colName]) == 'numeric'){
+      # escala la columna.
+      quiebras[,colName] = scale(quiebras[,colName])
+    }
+  }
+}
+
+head(quiebras, 3)  # se observan las 3 primeras columnas que han sido escaladas, y hacemos redondeos
+
+q = data.frame(
+  Min = apply(quiebras[,-1], 2, min), # mínim0
+  Med = apply(quiebras[,-1], 2, median), # mediana
+  Mean = apply(quiebras[,-1], 2, mean), # media
+  SD = apply(quiebras[,-1], 2, sd), # Desviación típica 
+  Max = apply(quiebras[,-1], 2, max) # Máximo
+)
+q = round(q, 1)
+head(q)
+```
+
+Cargamos la libreria factoextra y cluster para visualizar la distancia entre los datos:
+No es difícil calcular y visualizar una matriz de distancias mediante get_dist() y fviz_dist() del
+factoextra:
+  • get_dist(): calcula la matriz de distancias entre las filas (observaciones) de una matriz de datos; a diferencia de la función habitual dist(), admite medidas de distancia como las de Pearson, Kendall y Spearman.
+  • fviz_dist(): permite visualizar la matriz de distancias
+  
+```{r}
+library(factoextra)
+library(cluster)
+# Distancia entre las observaciones: Calculo
+(q.dist <- get_dist(quiebras[,2:10], stand = TRUE, method = "pearson")) # SOLO ADMITE VAL NUMERICOS
+str(q.dist)
+
+# Visualizacion de las distancias en un grafico
+fviz_dist(q.dist, lab_size = 5)
+fviz_dist(q.dist, gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"), lab_size = 5)
+
+# OTROS calculos de distancias 
+round(as.matrix(q.dist)[1:6, 1:6], 1)
+
+#Correlacion como medida de la similitud entre variables. Calculamos la matriz de correlaciones entre variables, por lo que tenemos que engañar a R indicando que las observaciones son variables, transponiendo filas por columnas en el objeto re-escalado...
+quiebras.cor <-  cor(t(quiebras[,-1]), method = "pearson")
+# empleamos quiebras: que es el objeto reescalado, sin la primera columna
+round(quiebras.cor[1:6, 1:6], 2)  # Los métodos de corr pueden ser Pearson, Kendall o Spearman
+
+# La transformamos en una matriz de distancias
+dist.corr <- as.dist(1-quiebras.cor)  # observamos como las correlaciones negativas ahora tendran un valor mayor que 1
+round(as.matrix(dist.corr)[1:6, 1:6], 2)
+
+
+# Por otro lado: funcion daisy() en vez de dist() ya que se puede emplear tanto para variables numericas como para variables no num. y emplea el coeficiente de Gower. library cluster()
+# daisy(x, metric = c(“euclidean”, “manhattan”, “gower”),stand = FALSE)
+
+```
+
+x: matriz numérica o data frame; se calculan las disimilaridades entre las filas; de ser un data frame, las columnas de tipo factor se considerarán como variables nominales mientras que las columnas de tipo ordered se reconocerán como variables ordinales;
+• metric: tipo de métrica a emplear; en caso de variables nominales la de Gower se emplea de forma automática;
+• stand: si TRUE, se procederá a la normalización de cada variable. Dado que aquí todas las variables son numéricas no emplearemos daisy().
+
+
+Nuestro objetivo es agrupar las distintas entidades financieras de acuerdo con las características que estamos observando. Para ello tenemos dos técnicas esenciales: el cluster jerárquico y el no jerárquico.
+Dentro del jerárquico existen dos vías fundamentales: las aglomerativas (AGNES), que trabajan de abajo a arriba, partiendo de cada observación y agregándola a cada una de acuerdo con una medida de distancia predefinidad; y las divisivas (DIANA), que actúan en sentido contrario, de arriba a abajo, dividiendo los grupos más heteregéneos hasta que cada observación se separa del resto.
+```{r}
+# Visualizacion de las matrices de distancias: 
+library(corrplot)
+  # DISTANCIA EUCLIDEA
+corrplot(as.matrix(q.dist), is.corr = FALSE, method = "color", tl.cex=0.6, tl.col="blue")
+#... que podemos cambiar a
+corrplot(as.matrix(q.dist), is.corr = FALSE, method = "color", type="lower", diag=F, order="hclust", tl.cex=0.6, tl.col="blue")  # para visualizr lo que hay por debajo de la diagonal principal.
+
+# 1. dendograma para visualizar grupos de observaciones similares
+plot(hclust(q.dist, method = "ward.D2"), cex=0.7, main="Dendrograma", ylab="Anchura", xlab="Análisis cluster aplicando Ward sobre matriz de distancias euclídeas")
+
+#2. Aplicar un mapa de calor para visualizar las distancias.
+heatmap(as.matrix(q.dist), symm = TRUE, distfun = function(x) as.dist(x))
+
+```
+
+Otra opción la ofrece la función eclust() del package factoextra, que presenta varias ventajas:
+* Simplifica el flujo del análisis cluster;
+* Permite hacer un cluster tanto jerárquico como divisivo en una única llamada;
+* Determina automáticamente el número adecuado de clusters empleando el gap statistic o estadístisco de corte, sin necesidad de precisar su número, como exigen la práctica totalidad de los métodos de agrupación; 
+* Permite una métrica basada en correlaciones en el cluster jerárquico.
+eclust(x, FUNcluster = “kmeans”, hc_metric = “euclidean”, . . . )
+
+ x: vector numérico, matriz o data frame;
+• FUNcluster: la función de agrupacion; permite “kmeans”, “pam”, “clara”, “fanny”, “hclust”, “agnes”
+y “diana”. Permite abreviaturas;
+• hc_metric: cadena de caracteres que especifica la métrica empleada para calcular las disimilaridades
+entre observaciones; permite las aceptadas por la función dist() [“euclidean”, “manhattan”, “maxi-
+mum”, “canberra”, “binary”, “minkowski”] y medidas de distancia basadas en correlaciones [“pearson”, “spearman” o “kendall”], cuando FUNcluster es una función de agrupación jerárquica como “hclust”, “agnes” o “diana”.
+
+Devuelve un objeto de clase eclust que incluye el resultado de la función empleada (kmeans, pam, hclust, agnes, diana, etc.) así como, entre otros, los siguientes elementos:
+• cluster: las asignaciones de las observaciones a los clusters tras podar el árbol; • nbclust: el número de clusters;
+• silinfo: la información de silueta de las observaciones;
+• size: el tamaño de los clusters;
+• data: una matriz con los datos originales o estandarizados (siempre que stand = TRUE);
+Lo aplicamos sobre quiebras, ya estandarizado, aplicando un k-means; la opción nstart es muy recomendable en kmeans, ya que este método emplea múltiples configuraciones aleatorias de arranque y de esta forma ejecuta la óptima; con nstart=25 se generan 25 configuraciones iniciales.
+```{r}
+quiebras.eclust <-  eclust(quiebras[,-1], FUNcluster = "kmeans", stand = TRUE, hc_metric = "euclidean", nstart = 25)  # 25 configuraciones aleatorias iniciales para encontrar la configuracion optima
+
+ # podemos fijar el número de clusters añadiendo k=número de clusters, por ejemplo k=4
+quiebras.eclust <- eclust(quiebras[,-1], FUNcluster = "kmeans", stand = TRUE, hc_metric = "euclidean", nstart = 25, k = 4)
+
+ # Gráfico de silueta (silhouette plot) - Lo hacemos sobre la opción con k=4 clusters
+fviz_silhouette(quiebras.eclust)
+
+# número óptimo de clusters - a través del estadístico de corte (sobre la opción general,
+quiebras.eclust$nbclust
+# quiebras.eclust  # ver que contiene el objeto
+```
+
+
+Pasamos a un jerarquico:
+
+```{r}
+# calcula hclust, forzando a 4 grupos
+quiebras.eclust.j = eclust(quiebras[,-1], "hclust", k=4)
+# dendrograma con 4 grupos
+fviz_dend(quiebras.eclust.j, rect = TRUE)
+
+# vemos la silueta
+fviz_silhouette(quiebras.eclust.j)
+
+ # scatter plot
+fviz_cluster(quiebras.eclust.j)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
